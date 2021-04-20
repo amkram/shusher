@@ -2,22 +2,22 @@ import './App.css';
 import DataInput from './components/DataInput'
 import { makeStyles } from '@material-ui/core/styles';
 import Paper from '@material-ui/core/Paper';
+import Box from '@material-ui/core/Box';
 
 
 const useStyles = makeStyles((theme) => ({
   root: {
   },
-  paperWrapper: {
+  wrapper: {
     width: '100%',
     height: '100%',
     display: 'block'
   },
-  usherPaper: {
+  usherBox: {
     margin: '0 auto',
-    marginTop: '30px',
     width: '75%',
     maxWidth: '1000px',
-    height: '55vh'
+    backgroundColor: '#f5f7f1'
   },
 }));
 
@@ -29,10 +29,10 @@ function App() {
       <div className="logo">
         <img className="logo-img" src="img/logo.png" alt="UShER logo"/>
       </div>
-      <div className={classes.paperWrapper}>
-        <Paper className={classes.usherPaper}>
+      <div className={classes.wrapper}>
+        <Box className={classes.usherBox}>
           <DataInput/>
-        </Paper>
+        </Box>
       </div>
 
     </div>

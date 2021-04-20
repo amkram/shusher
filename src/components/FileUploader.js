@@ -6,7 +6,7 @@ return <Button
     variant="contained"
     component="label"
     >
-    Upload File
+    Choose File
     <input
         type="file"
         hidden

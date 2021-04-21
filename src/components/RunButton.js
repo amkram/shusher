@@ -7,7 +7,7 @@ const useStyles = makeStyles((theme) => ({
 		backgroundColor: '#eee',
 		textTransform: 'none',
 		marginTop: '-8px',
-		height: '4vh'
+		height: '40px'
 	},
 	usherText: {
 		textShadow: '1px 1px #aaa',

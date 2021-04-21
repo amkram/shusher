@@ -73,21 +73,23 @@ const useStyles = makeStyles((theme) => ({
 
 function DataInput() {
     const classes = useStyles();
-    const [loaderOpen, setCollapsed] = React.useState(false);
-
-    const handleChange = () => {
-        setCollapsed((prev) => !prev);
-    };
+    const [collapsed, setCollapsed] = React.useState(false);
+    const [loadedFile, setLoadedFile] = React.useState("");
+    
 
     const handleDelete = () => {
-        handleChange();
+        setCollapsed(false);
     };
+    const handleUpload = (file) => {
+        setLoadedFile(file)
+        setCollapsed(true);
+    }
 
     return (
         <div className={classes.root}>
         <h3 className={classes.heading}>Load your data</h3>
         
-        <Collapse in={loaderOpen}>
+        <Collapse in={!collapsed}>
         <div className={classes.wrapper}>
 
             <FileDrop
@@ -98,21 +100,21 @@ function DataInput() {
             <div className={classes.overlay}>
                 <p>Drag a FASTA or VCF file here</p>
                 <img src="img/icon-file-light.png" className={classes.fileIcon}/>
-                <p>or&nbsp; <FileUploader /> </p>
+                <p>or&nbsp; <FileUploader callback={handleUpload}/> </p>
             </div>
         </div>
 
         </Collapse>
 
-        <Fade in={!loaderOpen}>
+        <Fade in={collapsed}>
             <Chip 
                 className={classes.loadedFileChip}
                 onDelete={handleDelete}
                 icon={<img src="img/icon-file-light.png" width='20px'/>}
-                label='This_is_a_filename.fasta (10.3 MB)'
+                label={loadedFile.name + ' (' + Number(loadedFile.size / 1000000).toFixed(1) + ' MB)'}
             /> 
         </Fade>
-        <Fade in={!loaderOpen}>
+        <Fade in={collapsed}>
             <div>
                 <h3 className={classes.heading}>Place samples</h3>
                 <Card className={classes.usherCard}>

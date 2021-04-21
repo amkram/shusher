@@ -14,15 +14,19 @@ const useStyles = makeStyles((theme) => ({
   }));
 
 
-function TreeForm() {
+function TreeForm(props) {
 	const classes = useStyles();
 
+	
 	return (
-	<FormControl className={classes.formControl}>
-        <Select value={1}>
-          <MenuItem value={1}>Latest SARS-CoV-2</MenuItem>
-        </Select>
-      </FormControl>);
+	<div>
+		<FormControl className={classes.formControl}>
+			<Select value={1}>
+			<MenuItem value={1}>Latest SARS-CoV-2</MenuItem>
+			</Select>
+		</FormControl>
+	</div>
+	);
 }
 
 export default TreeForm;

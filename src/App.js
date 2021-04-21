@@ -3,6 +3,7 @@ import DataInput from './components/DataInput'
 import { makeStyles } from '@material-ui/core/styles';
 import Paper from '@material-ui/core/Paper';
 import Box from '@material-ui/core/Box';
+import { useEffect } from 'react';
 
 
 const useStyles = makeStyles((theme) => ({
@@ -23,7 +24,10 @@ const useStyles = makeStyles((theme) => ({
 
 function App() {
   const classes = useStyles();
-
+  
+  useEffect(() => {
+    window.saveFileFromURL('/latest_tree.pb', 'https://hgwdev.gi.ucsc.edu/~angie/UShER_SARS-CoV-2/public-latest.all.masked.pb'); 
+  })
   return (
     <div className={classes.root}>
       <div className="logo">
@@ -38,5 +42,6 @@ function App() {
     </div>
   );
 }
+
 
 export default App;

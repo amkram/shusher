@@ -19,3 +19,8 @@ window.saveFileFromURL = (path, url) => {
 
   };
 
+window.FS = FS;
+window.Module = Module;
+
+window.Module.usher_err = '';
+window.Module.usher_output = '';

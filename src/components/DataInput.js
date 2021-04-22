@@ -81,8 +81,16 @@ function DataInput() {
         setCollapsed(false);
     };
     const handleUpload = (file) => {
-        setLoadedFile(file)
+        setLoadedFile(file);
+        file.arrayBuffer().then(buf => 
+            window.FS.writeFile('/new_samples.vcf', new Uint8Array(buf)),
+            console.log('wrote new samples to FS')
+        );
         setCollapsed(true);
+    }
+    const handleRunUsher = () => {
+        window.Module.arguments = ['-i', '/latest_tree.pb', '-v', '/new_samples.vcf', '-u', '-d', 'output']
+
     }
 
     return (

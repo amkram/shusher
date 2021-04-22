@@ -57,13 +57,13 @@ Module.noInitialRun = true;
 
 Module.print = function(text) {
  return function(text) {
-  usher_output += text;
+  Module.usher_output += text;
  };
 }();
 
 Module.printErr = function(text) {
  return function(text) {
-  usher_err += text;
+  Module.usher_err += text;
  };
 }();
 

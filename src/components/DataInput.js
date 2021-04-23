@@ -75,23 +75,37 @@ function DataInput() {
     const classes = useStyles();
     const [collapsed, setCollapsed] = React.useState(false);
     const [loadedFile, setLoadedFile] = React.useState("");
+    const [newSamplesReady, setNewSamplesReady] = React.useState(false);
     
 
     const handleDelete = () => {
         setCollapsed(false);
+        setNewSamplesReady(false);
+        setLoadedFile("");
     };
     const handleUpload = (file) => {
         setLoadedFile(file);
         file.arrayBuffer().then(buf => 
             window.FS.writeFile('/new_samples.vcf', new Uint8Array(buf)),
-            console.log('wrote new samples to FS')
+            console.log('wrote new samples to FS'),
+            setNewSamplesReady(true)
         );
         setCollapsed(true);
     }
     const handleRunUsher = () => {
-        window.Module.arguments = ['-i', '/latest_tree.pb', '-v', '/new_samples.vcf', '-u', '-d', 'output']
+        console.log(window.treeReady);
+        console.log(newSamplesReady);
+        
+        if (window.treeReady && newSamplesReady) {
+            window.Module.arguments = ['-i', '/latest_tree.pb', '-v', '/new_samples.vcf', '-u', '-d', '/'];
+            window.callMain(window.Module.arguments);
+            console.log('Running usher.');
+        } else {
+            console.log("Not ready yet...");
+        }
 
     }
+    
 
     return (
         <div className={classes.root}>
@@ -129,7 +143,7 @@ function DataInput() {
                     <div className={classes.usherCardInner}>
                         <strong>Using tree:</strong>
                         <TreeForm />
-                        <RunButton />
+                        <RunButton handleRunUsher={handleRunUsher}/>
                     </div>
                 </Card>
             </div>

@@ -36,7 +36,25 @@ Module['instantiateWasm'] = function(info, receiveInstance) {
   return instance.exports;
 };
 
+// When using postMessage to send an object, it is processed by the structured clone algorithm.
+// The prototype, and hence methods, on that object is then lost. This function adds back the lost prototype.
+// This does not work with nested objects that has prototypes, but it suffices for WasmSourceMap and WasmOffsetConverter.
+function resetPrototype(constructor, attrs) {
+  var object = Object.create(constructor.prototype);
+  for (var key in attrs) {
+    if (attrs.hasOwnProperty(key)) {
+      object[key] = attrs[key];
+    }
+  }
+  return object;
+}
+
+var wasmSourceMapData;
+var wasmOffsetData;
+
 function moduleLoaded() {
+  wasmSourceMap = resetPrototype(Module['WasmSourceMap'], wasmSourceMapData);
+  wasmOffsetConverter = resetPrototype(Module['WasmOffsetConverter'], wasmOffsetData);
 }
 
 this.onmessage = function(e) {
@@ -47,6 +65,9 @@ this.onmessage = function(e) {
       Module['wasmModule'] = e.data.wasmModule;
 
       Module['wasmMemory'] = e.data.wasmMemory;
+
+      wasmSourceMapData = e.data.wasmSourceMap;
+      wasmOffsetData = e.data.wasmOffsetConverter;
 
       Module['buffer'] = Module['wasmMemory'].buffer;
 

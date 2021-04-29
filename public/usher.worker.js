@@ -12,6 +12,10 @@
 
 var Module = {};
 
+function assert(condition, text) {
+  if (!condition) abort('Assertion failed: ' + text);
+}
+
 function threadPrintErr() {
   var text = Array.prototype.slice.call(arguments).join(' ');
   console.error(text);
@@ -19,6 +23,12 @@ function threadPrintErr() {
 function threadAlert() {
   var text = Array.prototype.slice.call(arguments).join(' ');
   postMessage({cmd: 'alert', text: text, threadId: Module['_pthread_self']()});
+}
+// We don't need out() for now, but may need to add it if we want to use it
+// here. Or, if this code all moves into the main JS, that problem will go
+// away. (For now, adding it here increases code size for no benefit.)
+var out = function() {
+  throw 'out() is not defined in worker.js.';
 }
 var err = threadPrintErr;
 this.alert = threadAlert;
@@ -36,25 +46,7 @@ Module['instantiateWasm'] = function(info, receiveInstance) {
   return instance.exports;
 };
 
-// When using postMessage to send an object, it is processed by the structured clone algorithm.
-// The prototype, and hence methods, on that object is then lost. This function adds back the lost prototype.
-// This does not work with nested objects that has prototypes, but it suffices for WasmSourceMap and WasmOffsetConverter.
-function resetPrototype(constructor, attrs) {
-  var object = Object.create(constructor.prototype);
-  for (var key in attrs) {
-    if (attrs.hasOwnProperty(key)) {
-      object[key] = attrs[key];
-    }
-  }
-  return object;
-}
-
-var wasmSourceMapData;
-var wasmOffsetData;
-
 function moduleLoaded() {
-  wasmSourceMap = resetPrototype(Module['WasmSourceMap'], wasmSourceMapData);
-  wasmOffsetConverter = resetPrototype(Module['WasmOffsetConverter'], wasmOffsetData);
 }
 
 this.onmessage = function(e) {
@@ -65,9 +57,6 @@ this.onmessage = function(e) {
       Module['wasmModule'] = e.data.wasmModule;
 
       Module['wasmMemory'] = e.data.wasmMemory;
-
-      wasmSourceMapData = e.data.wasmSourceMap;
-      wasmOffsetData = e.data.wasmOffsetConverter;
 
       Module['buffer'] = Module['wasmMemory'].buffer;
 
@@ -108,6 +97,10 @@ this.onmessage = function(e) {
       // The stack grows downwards
       var max = e.data.stackBase;
       var top = e.data.stackBase + e.data.stackSize;
+      assert(e.data.threadInfoStruct);
+      assert(top != 0);
+      assert(max != 0);
+      assert(top > max);
       // Also call inside JS module to set up the stack frame for this pthread in JS module scope
       Module['establishStackSpace'](top, max);
       Module['PThread'].receiveObjectTransfer(e.data);
@@ -123,6 +116,7 @@ this.onmessage = function(e) {
         // flag -s EMULATE_FUNCTION_POINTER_CASTS=1 to add in emulation for this x86 ABI extension.
         var result = Module['invokeEntryPoint'](e.data.start_routine, e.data.arg);
 
+        Module['checkStackCookie']();
         if (Module['keepRuntimeAlive']()) {
           Module['PThread'].setExitStatus(result);
         } else {
@@ -132,10 +126,20 @@ this.onmessage = function(e) {
         if (ex === 'Canceled!') {
           Module['PThread'].threadCancel();
         } else if (ex != 'unwind') {
+          // FIXME(sbc): Figure out if this is still needed or useful.  Its not
+          // clear to me how this check could ever fail.  In order to get into
+          // this try/catch block at all we have already called bunch of
+          // functions on `Module`.. why is this one special?
+          if (typeof(Module['_emscripten_futex_wake']) !== "function") {
+            err("Thread Initialisation failed.");
+            throw ex;
+          }
           // ExitStatus not present in MINIMAL_RUNTIME
           if (ex instanceof Module['ExitStatus']) {
             if (Module['keepRuntimeAlive']()) {
+              err('Pthread 0x' + Module['_pthread_self']().toString(16) + ' called exit(), staying alive due to noExitRuntime.');
             } else {
+              err('Pthread 0x' + Module['_pthread_self']().toString(16) + ' called exit(), calling threadExit.');
               Module['PThread'].threadExit(ex.status);
             }
           }
@@ -144,6 +148,9 @@ this.onmessage = function(e) {
             Module['PThread'].threadExit(-2);
             throw ex;
           }
+        } else {
+          // else e == 'unwind', and we should fall through here and keep the pthread alive for asynchronous events.
+          err('Pthread 0x' + Module['_pthread_self']().toString(16) + ' completed its pthread main entry point with an unwind, keeping the pthread worker alive for asynchronous operation.');
         }
       }
     } else if (e.data.cmd === 'cancel') { // Main thread is asking for a pthread_cancel() on this thread.

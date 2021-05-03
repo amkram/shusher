@@ -203,38 +203,23 @@ Module.expectedDataFileDownloads++;
  };
  loadPackage({
   "files": [ {
-   "filename": "/global_assignments_big.pb",
+   "filename": "/GCF_009858895.2_ASM985889v3_genomic.fna",
    "start": 0,
-   "end": 50319208,
-   "audio": 0
-  }, {
-   "filename": "/global_assignments.pb",
-   "start": 50319208,
-   "end": 50343514,
-   "audio": 0
-  }, {
-   "filename": "/filtered_18M.pb",
-   "start": 50343514,
-   "end": 69165933,
-   "audio": 0
-  }, {
-   "filename": "/filtered_7M.pb",
-   "start": 69165933,
-   "end": 76234558,
+   "end": 30374,
    "audio": 0
   }, {
    "filename": "/filtered_6K.pb",
-   "start": 76234558,
-   "end": 76240682,
+   "start": 30374,
+   "end": 36498,
    "audio": 0
   }, {
    "filename": "/new_samples_preload.vcf",
-   "start": 76240682,
-   "end": 76241250,
+   "start": 36498,
+   "end": 37066,
    "audio": 0
   } ],
-  "remote_package_size": 76241250,
-  "package_uuid": "b7c3c002-d3fc-4b1d-be9a-9aef2daa9171"
+  "remote_package_size": 37066,
+  "package_uuid": "53fb9c5d-5d64-4a37-856f-9465b9fac3bf"
  });
 })();
 
@@ -1607,10 +1592,10 @@ var tempDouble;
 var tempI64;
 
 var ASM_CONSTS = {
- 129676: function() {
+ 129308: function() {
   throw "Canceled!";
  },
- 129694: function($0, $1) {
+ 129326: function($0, $1) {
   setTimeout(function() {
    __emscripten_do_dispatch_to_thread($0, $1);
   }, 0);
@@ -6678,9 +6663,9 @@ var dynCall_iiiiijj = Module["dynCall_iiiiijj"] = createExportWrapper("dynCall_i
 
 var dynCall_iiiiiijj = Module["dynCall_iiiiiijj"] = createExportWrapper("dynCall_iiiiiijj");
 
-var __emscripten_allow_main_runtime_queued_calls = Module["__emscripten_allow_main_runtime_queued_calls"] = 129352;
+var __emscripten_allow_main_runtime_queued_calls = Module["__emscripten_allow_main_runtime_queued_calls"] = 128984;
 
-var __emscripten_main_thread_futex = Module["__emscripten_main_thread_futex"] = 194996;
+var __emscripten_main_thread_futex = Module["__emscripten_main_thread_futex"] = 194628;
 
 function invoke_viii(index, a1, a2, a3) {
  var sp = stackSave();

@@ -7,10 +7,13 @@
     "@testing-library/jest-dom": "^5.11.10",
     "@testing-library/react": "^11.2.6",
     "@testing-library/user-event": "^12.8.3",
+    "@types/jest": "^26.0.23",
+    "lodash": "^4.17.21",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-file-drop": "^3.1.2",
     "react-scripts": "4.0.3",
+    "typescript": "^4.2.4",
     "web-vitals": "^1.1.1"
   },
   "scripts": {
@@ -36,5 +39,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.14.168"
   }
 }

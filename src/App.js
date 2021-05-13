@@ -5,6 +5,7 @@ import Paper from '@material-ui/core/Paper';
 import Box from '@material-ui/core/Box';
 import { useEffect } from 'react';
 import { alignPairwise } from './tools/alignPairwise'
+import AuspiceFrame from './components/AuspiceFrame'
 
 
 const useStyles = makeStyles((theme) => ({
@@ -21,6 +22,10 @@ const useStyles = makeStyles((theme) => ({
     maxWidth: '1000px',
     backgroundColor: '#f5f7f1'
   },
+  auspice: {
+    width: '100%',
+    height: '100%',
+      }
 }));
 
 function testAlignment() {
@@ -75,19 +80,22 @@ function testAlignment() {
     var vcf_line = 'REFERENCE' + '\t' + (pos*1+1) + '\t' + idList.join(',') + '\t' + refAllele + '\t' + altAlleles.join(',') + '\t.\t.\t.\tGT\t' + snps[pos].genotypes.join(',');
     console.log(vcf_line);
   }
-
+}
   //  NC_045512v2	1440	G1440A	G	A	.	.	AC=482,9;AN=39342	GT	1	1	1	1	1
 
+function testDrag() {
+
+}
   
 //  alignPairwise()
-}
+
 
 function App() {
   const classes = useStyles();
   
   useEffect(() => {
 //    window.saveFileFromURL('/latest_tree.pb', 'https://hgwdev.gi.ucsc.edu/~angie/UShER_SARS-CoV-2/public-latest.all.masked.pb'); 
-    testAlignment();
+    testDrag();
 })
   
   return (
@@ -99,6 +107,7 @@ function App() {
         <Box className={classes.usherBox}>
           <DataInput/>
         </Box>
+        <AuspiceFrame />
       </div>
 
     </div>

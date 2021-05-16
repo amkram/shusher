@@ -1,9 +1,13 @@
-//import { Tree } from './Tree'
+import { Tree } from './Tree'
 import React from 'react'
+import { Provider } from 'react-redux'
+
 
 export default function AuspiceFrame() {
     return (
-        <span></span>
-        //typeof window !== 'undefined' && <Tree />
+        <div>
+            <Tree />
+        </div>
+        
     )
 }

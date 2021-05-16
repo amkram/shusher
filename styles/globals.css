@@ -19,7 +19,7 @@ body {
 
 @font-face {
   font-family: 'Inter';
-  src: local('Inter'), url(../fonts/Inter/Inter-Regular.woff) format('woff');
+  src: local('Inter'), url(../vendor/fonts/Inter/Inter-Regular.woff) format('woff');
 }
 
 code {

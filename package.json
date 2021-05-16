@@ -3,9 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "bash scripts/auspice-monkey-patch.sh && bash scripts/patch-next.sh && next dev",
+    "dev": "yarn run patch && next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "patch": "bash vendor/nextclade/tools/auspice-monkey-patch.sh && bash vendor/nextclade/tools/patch-next.sh"
   },
   "dependencies": {
     "@material-ui/core": "^4.11.4",

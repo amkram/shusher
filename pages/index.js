@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react'
 import Head from 'next/head'
 import Image from 'next/image'
 import styles from '../styles/Home.module.css'
-import AuspiceFrame from '../components/auspice/AuspiceFrame'
+import DynamicAuspiceFrame from '../components/auspice/DynamicAuspiceFrame'
 import Box from '@material-ui/core/Box';
 import DataInput from '../components/DataInput'
 import { makeStyles } from '@material-ui/core/styles';
@@ -48,7 +48,7 @@ export default function Home() {
       <Box className={classes.usherBox}>
         <DataInput/>
       </Box>
-      <AuspiceFrame />
+      <DynamicAuspiceFrame />
     </div>
 
   </div>

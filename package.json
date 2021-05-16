@@ -1,49 +1,40 @@
 {
-  "name": "usher-web",
+  "name": "usher-web-app",
   "version": "0.1.0",
   "private": true,
-  "dependencies": {
-    "@material-ui/core": "^4.11.3",
-    "@testing-library/jest-dom": "^5.11.10",
-    "@testing-library/react": "^11.2.6",
-    "@testing-library/user-event": "^12.8.3",
-    "@types/jest": "^26.0.23",
-    "auspice": "^2.25.1",
-    "lodash": "^4.17.21",
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2",
-    "react-file-drop": "^3.1.2",
-    "react-scripts": "4.0.3",
-    "typescript": "^4.2.4",
-    "web-vitals": "^1.1.1"
-  },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "dev": "bash scripts/auspice-monkey-patch.sh && bash scripts/patch-next.sh && next dev",
+    "build": "next build",
+    "start": "next start"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+  "dependencies": {
+    "@material-ui/core": "^4.11.4",
+    "auspice": "^2.25.1",
+    "next": "10.2.0",
+    "next-transpile-modules": "^7.0.0",
+    "react": "17.0.2",
+    "react-dom": "17.0.2",
+    "react-file-drop": "^3.1.2",
+    "react-virtualized-auto-sizer": "^1.0.5",
+    "regenerator-runtime": "^0.13.7"
   },
   "devDependencies": {
-    "@babel/cli": "^7.13.16",
-    "@babel/plugin-proposal-decorators": "^7.14.2",
-    "@types/lodash": "^4.14.168"
+    "@babel/core": "7.11.5",
+    "@babel/node": "7.10.5",
+    "@babel/plugin-proposal-class-properties": "7.10.4",
+    "@babel/plugin-proposal-decorators": "7.10.5",
+    "@babel/plugin-proposal-numeric-separator": "7.10.4",
+    "@babel/plugin-syntax-dynamic-import": "7.8.3",
+    "@babel/plugin-transform-flow-strip-types": "7.10.4",
+    "@babel/plugin-transform-modules-commonjs": "7.10.4",
+    "@babel/plugin-transform-react-constant-elements": "7.10.4",
+    "@babel/plugin-transform-react-inline-elements": "7.10.4",
+    "@babel/plugin-transform-runtime": "^7.11.5",
+    "@babel/preset-env": "7.11.5",
+    "@babel/preset-react": "7.10.4",
+    "@babel/register": "7.11.5",
+    "@babel/runtime": "^7.11.2",
+    "@babel/runtime-corejs3": "7.11.2",
+    "babel-loader": "^8.2.2"
   }
 }

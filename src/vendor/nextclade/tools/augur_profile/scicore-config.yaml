@@ -1,0 +1,2 @@
+
+localrules: "clades_profile/localrules.smk"

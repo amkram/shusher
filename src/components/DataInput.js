@@ -121,7 +121,7 @@ function DataInput() {
             />
             <div className={classes.overlay}>
                 <p>Drag a FASTA or VCF file here</p>
-                <img src="img/icon-file-light.png" className={classes.fileIcon}/>
+                <img src="/dist/img/icon-file-light.png" className={classes.fileIcon}/>
                 <p>or&nbsp; <FileUploader callback={handleUpload}/> </p>
             </div>
         </div>
@@ -132,7 +132,7 @@ function DataInput() {
             <Chip 
                 className={classes.loadedFileChip}
                 onDelete={handleDelete}
-                icon={<img src="img/icon-file-light.png" width='20px'/>}
+                icon={<img src="/dist/img/icon-file-light.png" width='20px'/>}
                 label={loadedFile.name + ' (' + Number(loadedFile.size / 1000000).toFixed(1) + ' MB)'}
             /> 
         </Fade>

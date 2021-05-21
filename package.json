@@ -6,17 +6,15 @@
   "scripts": {
     "modify-auspice-server": "node scripts/modify-auspice-server.js",
     "postinstall": "npm run modify-auspice-server",
-    "build": "auspice build --verbose --extend ./src/pages/auspice-config.json",
-    "buildTest": "auspice build --verbose",
-    "start": "auspice view --handlers ./server/handlers.js",
+    "build": "rm -rf dist && auspice build --verbose --extend ./src/pages/auspice-config.json && cp -r public/* dist",
+    "start": "auspice view --verbose --handlers ./server/handlers.js",
     "develop": "auspice develop --verbose --extend ./src/pages/auspice-config.json"
   },
   "dependencies": {
     "@material-ui/core": "^4.11.4",
     "auspice": "2.23.0",
     "heroku-ssl-redirect": "0.0.4",
-    "react-file-drop": "^3.1.2",
-    "react-script-tag": "^1.1.2"
+    "react-file-drop": "^3.1.2"
   },
   "devDependencies": {}
 }

@@ -1,3 +1,6 @@
+// From auspice.us
+// https://github.com/nextstrain/auspice.us
+
 /**
  * This script exists to modify settings in the auspice server which are not currently exposed
  * (i.e. not customisable). Over time I hope that use-cases here (and elsewhere) can drive
@@ -26,7 +29,7 @@ function redirectHttpToHttps(contents) {
   const useCompression = "app.use(compression());";
   const fsImport = 'const fs = require("fs");';
   if (contents.includes(useCompression) && contents.includes(fsImport)) {
-    contents = contents.replace(fsImport, "const sslRedirect = require('heroku-ssl-redirect');" + "\n" + fsImport);
+     contents = contents.replace(fsImport, "const sslRedirect = require('heroku-ssl-redirect');" + "\n" + fsImport);
     contents = contents.replace(useCompression, "app.use(sslRedirect());" + "\n  " + useCompression);
   } else {
     console.log("WARNING -- redirect HTTP -> HTTPS failed. Has the view.js contents changed?");

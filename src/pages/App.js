@@ -48,24 +48,38 @@ class App extends React.Component {
 
  	testViz() {
 		if (!this.treeVisible) {
-			console.log('Showing auspice JSON.')
-		//	showTree(this.props.dispatch, File(window.FS.readFile('/zika.json', 'utf8')));
-			this.setState({treeVisible: true})
+			window.saveFileFromUrl('/zika.json', 'http://data.nextstrain.org/zika.json')
+				.then(() => {
+					var jsonFile = new File([window.FS.readFile('/zika.json', {'encoding': 'utf8'})],
+						"zika.json", { type: "application/json"});
+						console.log('Showing auspice JSON.');			
+						showTree(this.props.dispatch, jsonFile);
+						this.setState({treeVisible: true})
+				}).catch((e) => {console.log(e)})
+
 		}
 	}
 	
 	componentDidMount() {
-		// Load the UShER Emscripten bundle and global JS
 		if (!this.state.usherLoaded) {
+	
+			// Load the UShER Emscripten bundle and global JS
+			const beforeJS = document.createElement('script');
 			const usherJS = document.createElement('script');
-			const toolsJS = document.createElement('script');
+			const afterJS = document.createElement('script');
+			beforeJS.src = '/dist/js/before.js';
 			usherJS.src = '/dist/js/usher.js';
-			toolsJS.src = '/dist/js/tools.js';
+			afterJS.src = '/dist/js/after.js';
+			beforeJS.async = true;
 			usherJS.async = true;
-			toolsJS.async = true;
-			document.body.appendChild(usherJS);
-			usherJS.onload = () => { document.body.appendChild(toolsJS); };
-			toolsJS.onload = () => { this.testViz(); }
+			afterJS.async = true;
+			document.body.appendChild(beforeJS);
+			
+			// Ensure script ordering
+			beforeJS.onload = () => { document.body.appendChild(usherJS); };
+			usherJS.onload = () => { document.body.appendChild(afterJS); };
+			afterJS.onload = () => { this.testViz(); }
+	
 			//window.saveFileFromURL('/latest_tree.pb', 'https://hgwdev.gi.ucsc.edu/~angie/UShER_SARS-CoV-2/public-latest.all.masked.pb'); 
 			this.setState({usherLoaded: true});
 			console.log("Usher JS loaded.");

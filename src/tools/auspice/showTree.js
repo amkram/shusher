@@ -17,7 +17,7 @@ export const showTree = (dispatch, file) => {
       let json;
       const fileName = file.name.toLowerCase();
       if (fileName.endsWith("json")) {
-        console.log("Parsing dropped file as Auspice v2 JSON");
+        console.log("Parsing file as Auspice v2 JSON");
         json = JSON.parse(event.target.result);
       } else {
         throw new Error("Not a JSON file.");

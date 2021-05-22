@@ -2,19 +2,20 @@
  * It binds some functions to the global 'window' so we can access them from React components.
  */
 
-window.saveFileFromUrl = function(path, url) {
+window.saveFileFromUrl = function(path, url, mimeType) {
     var req = new XMLHttpRequest();
     return new Promise((resolve, reject) => {
         req.onreadystatechange = function() {
             if (req.readyState == 4) {
+                var arrayBuffer = req.response;
                 console.log('Saved ' + url + ' to ' + path);
-                FS.writeFile(path, this.responseText);
+                FS.writeFile(path, new Uint8Array(arrayBuffer));
                 resolve();
-                //window.treeReady = true;
             }
         } 
-        req.overrideMimeType( "text/plain; charset=x-user-defined" );
+//        req.overrideMimeType(mimeType);
         req.open('GET', url, true);
+        req.responseType = "arraybuffer";
         req.send();
     });
 };

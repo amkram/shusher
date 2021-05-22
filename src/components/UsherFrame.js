@@ -8,6 +8,7 @@ import Card from '@material-ui/core/Card';
 import TreeForm from './TreeForm'
 import FileUploader from './FileUploader';
 import RunButton from './RunButton';
+import UsherProgress from './UsherProgress';
 
 
 const useStyles = makeStyles((theme) => ({
@@ -56,7 +57,8 @@ const useStyles = makeStyles((theme) => ({
     loadedFileChip: {
         borderRadius: '7px',
         backgroundColor: '#b1e3b5',
-        margin: '0 auto'
+        margin: '0 auto',
+        fontSize: 14
     },
     usherCard: {
         display: 'block',
@@ -67,19 +69,23 @@ const useStyles = makeStyles((theme) => ({
     usherCardInner: {
         display: 'flex',
         justifyContent: 'center',
-        marginTop: '4vh'
+        marginTop: '4vh',
+        fontSize: 16
     },
   }));
 
 function UsherFrame(props) {
     const classes = useStyles();
-    const [collapsed, setCollapsed] = React.useState(false);
+    const [uploadCollapsed, setUploadCollapsed] = React.useState(true);
+    const [showResults, setShowResults] = React.useState(false);
     const [loadedFile, setLoadedFile] = React.useState("");
     const [newSamplesReady, setNewSamplesReady] = React.useState(false);
+    const [currentSample, setCurrentSample] = React.useState(0);
     
 
     const handleDelete = () => {
-        setCollapsed(false);
+        setUploadCollapsed(false);
+        setShowResults(false);
         setNewSamplesReady(false);
         setLoadedFile("");
     };
@@ -90,20 +96,26 @@ function UsherFrame(props) {
             console.log('wrote new samples to FS'),
             setNewSamplesReady(true)
         );
-        setCollapsed(true);
+        setUploadCollapsed(true);
     }
     const handleRunUsher = () => {
-        console.log(props.latestTreeDownloaded );
+        console.log(props.latestTreeDownloaded);
         console.log(newSamplesReady);
         
         if (props.latestTreeDownloaded && newSamplesReady) {
-            window.Module.arguments = ['-i', '/latest_tree.pb', '-v', '/new_samples.vcf', '-u', '-d', '/'];
-            window.callMain(window.Module.arguments);
+            var args = ['-i', '/latest_tree.pb', '-v', '/new_samples.vcf', '-u', '-d', '/'];
+            window.callMain(args);
             console.log('Running usher.');
+            setShowResults(true);
+            setInterval(trackUsherProgress, 500);
         } else {
             console.log("Not ready yet...");
         }
-
+    }
+    const trackUsherProgress = () => {
+        if (window.Module.usher_err) {
+            setCurrentSample((window.Module.usher_err.match(/Sample name/g) || []).length + 1);
+        }
     }
     
 
@@ -111,7 +123,7 @@ function UsherFrame(props) {
         <div className={classes.root}>
         <h3 className={classes.heading}>Load your data</h3>
         
-        <Collapse in={!collapsed}>
+        <Collapse in={!uploadCollapsed}>
         <div className={classes.wrapper}>
 
             <FileDrop
@@ -128,7 +140,7 @@ function UsherFrame(props) {
 
         </Collapse>
 
-        <Fade in={collapsed}>
+        <Fade in={uploadCollapsed}>
             <Chip 
                 className={classes.loadedFileChip}
                 onDelete={handleDelete}
@@ -136,7 +148,7 @@ function UsherFrame(props) {
                 label={loadedFile.name + ' (' + Number(loadedFile.size / 1000000).toFixed(1) + ' MB)'}
             /> 
         </Fade>
-        <Fade in={collapsed}>
+        <Fade in={uploadCollapsed}>
             <div>
                 <h3 className={classes.heading}>Place samples</h3>
                 <Card className={classes.usherCard}>
@@ -145,6 +157,14 @@ function UsherFrame(props) {
                         <TreeForm />
                         <RunButton handleRunUsher={handleRunUsher} showLoading={!(props.latestTreeDownloaded && newSamplesReady)}/>
                     </div>
+                </Card>
+            </div>
+        </Fade>
+        <Fade in={showResults}>
+            <div>
+                <h3 classname={classes.heading}>View Results</h3>
+                <Card className={classes.resultsCardInner}>
+                    <UsherProgress value={currentSample/5 * 100} currentSample={currentSample}/>
                 </Card>
             </div>
         </Fade>

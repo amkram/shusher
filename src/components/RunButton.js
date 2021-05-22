@@ -1,6 +1,7 @@
 import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
+import CircularProgress from '@material-ui/core/CircularProgress'
 
 const useStyles = makeStyles((theme) => ({
 	button: {
@@ -24,9 +25,12 @@ function RunButton(props) {
 		<div>
 			<Button className={classes.button}
 				variant="contained" component="label" onClick={props.handleRunUsher}>
-				Run&nbsp;<span className={classes.usherText}>UShER</span>
+				{ props.showLoading 
+					?  <CircularProgress size={'65%'}/>
+					:  <span>Run&nbsp;<span className={classes.usherText}>UShER</span></span>
+				}
 			</Button>
-			{ props.showLoading &&  <p>Loading...</p> }
+			
 		</div>
 	);
 }

@@ -3,6 +3,8 @@ import Box from '@material-ui/core/Box';
 import UsherFrame from '../components/UsherFrame'
 import { withStyles } from '@material-ui/core/styles'
 import { showTree } from '../tools/auspice/showTree.js'
+import { latestTreeUrl } from '../tools/constants.js'
+
 import '../styles/global.css'
 
 
@@ -11,6 +13,7 @@ const styles = theme => ({
 		textAlign: 'center',
 		margin: 0,
 		fontFamily: 'Inter, Helvetica, sans-serif',
+		fontSize: 16,
 		backgroundColor: '#f5f7f1'
 	},
 	wrapper: {
@@ -49,7 +52,7 @@ class App extends React.Component {
 
  	testViz() {
 		if (!this.treeVisible) {
-			window.saveFileFromUrl('/zika.json', 'http://data.nextstrain.org/zika.json')
+			window.saveFileFromUrl('/zika.json', 'http://data.nextstrain.org/zika.json', 'application/json')
 				.then(() => {
 					var jsonFile = new File([window.FS.readFile('/zika.json', {'encoding': 'utf8'})],
 						"zika.json", { type: "application/json"});
@@ -83,10 +86,11 @@ class App extends React.Component {
 				console.log("Usher JS loaded.");
 				this.setState({usherLoaded: true});
 				//this.testViz(); 
-				window.saveFileFromUrl('/latest_tree.pb', 'https://hgwdev.gi.ucsc.edu/~angie/UShER_SARS-CoV-2/public-latest.all.masked.pb')
-				.then(() => {
-					this.setState({latestTreeDownloaded: true})
-				});
+				var mimeType = 'application/octet-stream';
+				window.saveFileFromUrl('/latest_tree.pb', latestTreeUrl, mimeType)
+					.then(() => {
+						this.setState({latestTreeDownloaded: true})
+					});
 			}				
 		}
 	}
@@ -99,7 +103,7 @@ class App extends React.Component {
 				<div className="logo">
 					<img className={classes.logoImg} src="/dist/img/logo.png" alt="UShER logo"/>
 					<Box className={classes.usherBox}>
-						<UsherFrame latestTreeDownloaded={this.latestTreeDownloaded}/>
+						<UsherFrame latestTreeDownloaded={this.state.latestTreeDownloaded}/>
 					</Box>
 				</div>
 			</div>

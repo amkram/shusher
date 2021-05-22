@@ -1,6 +1,6 @@
 import React, {useEffect} from 'react'
 import Box from '@material-ui/core/Box';
-import DataInput from '../components/DataInput'
+import UsherFrame from '../components/UsherFrame'
 import { withStyles } from '@material-ui/core/styles'
 import { showTree } from '../tools/auspice/showTree.js'
 import '../styles/global.css'
@@ -41,7 +41,8 @@ class App extends React.Component {
 		super(props);		
 		this.state = {
 			usherLoaded: false,
-			treeVisible: false
+			treeVisible: false,
+			latestTreeDownloaded: false
 		};
 	}
 	
@@ -78,11 +79,15 @@ class App extends React.Component {
 			// Ensure script ordering
 			beforeJS.onload = () => { document.body.appendChild(usherJS); };
 			usherJS.onload = () => { document.body.appendChild(afterJS); };
-			afterJS.onload = () => { this.testViz(); }
-	
-			//window.saveFileFromURL('/latest_tree.pb', 'https://hgwdev.gi.ucsc.edu/~angie/UShER_SARS-CoV-2/public-latest.all.masked.pb'); 
-			this.setState({usherLoaded: true});
-			console.log("Usher JS loaded.");
+			afterJS.onload = () => { 
+				console.log("Usher JS loaded.");
+				this.setState({usherLoaded: true});
+				//this.testViz(); 
+				window.saveFileFromUrl('/latest_tree.pb', 'https://hgwdev.gi.ucsc.edu/~angie/UShER_SARS-CoV-2/public-latest.all.masked.pb')
+				.then(() => {
+					this.setState({latestTreeDownloaded: true})
+				});
+			}				
 		}
 	}
 
@@ -94,7 +99,7 @@ class App extends React.Component {
 				<div className="logo">
 					<img className={classes.logoImg} src="/dist/img/logo.png" alt="UShER logo"/>
 					<Box className={classes.usherBox}>
-						<DataInput/>
+						<UsherFrame latestTreeDownloaded={this.latestTreeDownloaded}/>
 					</Box>
 				</div>
 			</div>

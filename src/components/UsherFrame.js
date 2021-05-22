@@ -71,7 +71,7 @@ const useStyles = makeStyles((theme) => ({
     },
   }));
 
-function DataInput() {
+function UsherFrame(props) {
     const classes = useStyles();
     const [collapsed, setCollapsed] = React.useState(false);
     const [loadedFile, setLoadedFile] = React.useState("");
@@ -93,10 +93,10 @@ function DataInput() {
         setCollapsed(true);
     }
     const handleRunUsher = () => {
-        console.log(window.treeReady);
+        console.log(props.latestTreeDownloaded );
         console.log(newSamplesReady);
         
-        if (window.treeReady && newSamplesReady) {
+        if (props.latestTreeDownloaded && newSamplesReady) {
             window.Module.arguments = ['-i', '/latest_tree.pb', '-v', '/new_samples.vcf', '-u', '-d', '/'];
             window.callMain(window.Module.arguments);
             console.log('Running usher.');
@@ -143,7 +143,7 @@ function DataInput() {
                     <div className={classes.usherCardInner}>
                         <strong>Using tree:</strong>
                         <TreeForm />
-                        <RunButton handleRunUsher={handleRunUsher}/>
+                        <RunButton handleRunUsher={handleRunUsher} showLoading={!(props.latestTreeDownloaded && newSamplesReady)}/>
                     </div>
                 </Card>
             </div>
@@ -153,4 +153,4 @@ function DataInput() {
     );
 }
 
-export default DataInput;
+export default UsherFrame;

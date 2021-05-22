@@ -21,10 +21,14 @@ function RunButton(props) {
 	const classes = useStyles();
 
 	return (
-	<Button className={classes.button}
-		variant="contained" component="label" onClick={props.handleRunUsher}>
-		Run&nbsp;<span className={classes.usherText}>UShER</span>
-	</Button>);
+		<div>
+			<Button className={classes.button}
+				variant="contained" component="label" onClick={props.handleRunUsher}>
+				Run&nbsp;<span className={classes.usherText}>UShER</span>
+			</Button>
+			{ props.showLoading &&  <p>Loading...</p> }
+		</div>
+	);
 }
 
 export default RunButton;

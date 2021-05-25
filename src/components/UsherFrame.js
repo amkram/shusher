@@ -103,7 +103,7 @@ function UsherFrame(props) {
         console.log(newSamplesReady);
         
         if (props.latestTreeDownloaded && newSamplesReady) {
-            var args = ['-i', '/latest_tree.pb', '-v', '/new_samples.vcf', '-u', '-d', '/'];
+            var args = ['-k', '50', '-i', '/latest_tree.pb', '-v', '/new_samples.vcf', '-d', '/'];
             window.callMain(args);
             console.log('Running usher.');
             setShowResults(true);
@@ -114,7 +114,7 @@ function UsherFrame(props) {
     }
     const trackUsherProgress = () => {
         if (window.Module.usher_err) {
-            setCurrentSample((window.Module.usher_err.match(/Sample name/g) || []).length + 1);
+            setCurrentSample((window.Module.usher_err.match(/Sample name/g) || []).length);
         }
     }
     

@@ -85,7 +85,7 @@ class App extends React.Component {
 			afterJS.onload = () => { 
 				console.log("Usher JS loaded.");
 				this.setState({usherLoaded: true});
-				//this.testViz(); 
+//				this.testViz(); 
 				var mimeType = 'application/octet-stream';
 				window.saveFileFromUrl('/latest_tree.pb', latestTreeUrl, mimeType)
 					.then(() => {

@@ -1,3 +1,5 @@
+// From auspice.us
+// https://github.com/nextstrain/auspice.us
 
 module.exports = {
   getAvailable: send204,

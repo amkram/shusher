@@ -7,9 +7,8 @@ export default function UsherProgress(props) {
 	return (
 	  <div>
 		  UShER is running!<br />
-		  Please be patient, this will take about 20 to 25 seconds per sample. <br />
-		  If you have many samples, consider these much faster options. <br/>
-		<Box position="relative" display="inline-flex">
+		  Please be patient, this may take over 30 seconds per sample. <br />
+		  	<Box position="relative" display="inline-flex">
 			<CircularProgress variant="determinate" {...props} />
 			<Box
 			top={0}

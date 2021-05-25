@@ -4,10 +4,10 @@
   "author": "Alexander Kramer",
   "license": "AGPL-3.0-only",
   "scripts": {
-    "modify-auspice-server": "node scripts/modify-auspice-server.js",
+    "modify-auspice-server": "node ./vendor/auspice.us/modify-auspice-server.js",
     "postinstall": "npm run modify-auspice-server",
     "build": "rm -rf dist && auspice build --verbose --extend ./src/pages/auspice-config.json && cp -r public/* dist",
-    "start": "auspice view --verbose --handlers ./server/handlers.js",
+    "start": "auspice view --verbose --handlers .vendor/auspice.us/handlers.js",
     "develop": "auspice develop --verbose --extend ./src/pages/auspice-config.json"
   },
   "dependencies": {

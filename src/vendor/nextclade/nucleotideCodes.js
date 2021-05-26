@@ -1,10 +1,10 @@
-// From nextclade
+// From nextclade (typescript types removed)
 // https://github.com/nextstrain/nextclade
 
 import { get } from 'lodash'
 import { intersection } from './setOperations'
 
-const IUPACNucCodes: Record<string, Set<string>> = {
+const IUPACNucCodes = {
   A: new Set(['A']),
   C: new Set(['C']),
   G: new Set(['G']),
@@ -24,7 +24,7 @@ const IUPACNucCodes: Record<string, Set<string>> = {
 
 export const canonicalNucleotides = new Set(['A', 'C', 'G', 'T'])
 
-export function isMatch(query: string, reference: string): boolean {
+export function isMatch(query, reference) {
   // simple match or ambiguous
   if (query === reference || query === 'N' || reference === 'N') {
     return true

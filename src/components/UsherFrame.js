@@ -162,7 +162,7 @@ function UsherFrame(props) {
         </Fade>
         <Fade in={showResults}>
             <div>
-                <h3 classname={classes.heading}>View Results</h3>
+                <h3 className={classes.heading}>View Results</h3>
                 <Card className={classes.resultsCardInner}>
                     <UsherProgress value={currentSample/5 * 100} currentSample={currentSample}/>
                 </Card>

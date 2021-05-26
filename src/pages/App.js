@@ -2,8 +2,9 @@ import React, {useEffect} from 'react'
 import Box from '@material-ui/core/Box';
 import UsherFrame from '../components/UsherFrame'
 import { withStyles } from '@material-ui/core/styles'
-import { showTree } from '../tools/auspice/showTree.js'
+import { showTree } from '../tools/auspice/showTree'
 import { latestTreeUrl } from '../tools/constants.js'
+import { fastaToVcf } from '../tools/alignment/fastaToVcf'
 
 import '../styles/global.css'
 
@@ -60,8 +61,11 @@ class App extends React.Component {
 						showTree(this.props.dispatch, jsonFile);
 						this.setState({treeVisible: true})
 				}).catch((e) => {console.log(e)})
-
 		}
+	}
+
+	testAlign() {
+		fastaToVcf();
 	}
 	
 	componentDidMount() {
@@ -85,12 +89,13 @@ class App extends React.Component {
 			afterJS.onload = () => { 
 				console.log("Usher JS loaded.");
 				this.setState({usherLoaded: true});
-//				this.testViz(); 
-				var mimeType = 'application/octet-stream';
-				window.saveFileFromUrl('/latest_tree.pb', latestTreeUrl, mimeType)
-					.then(() => {
-						this.setState({latestTreeDownloaded: true})
-					});
+				this.testAlign();
+				//				this.testViz(); 
+				// var mimeType = 'application/octet-stream';
+				// window.saveFileFromUrl('/latest_tree.pb', latestTreeUrl, mimeType)
+				// 	.then(() => {
+				// 		this.setState({latestTreeDownloaded: true})
+				// 	});
 			}				
 		}
 	}

@@ -1,45 +1,24 @@
-// From nextclade
+// From nextclade (typescript types removed)
 // https://github.com/nextstrain/nextclade
 
 import { isMatch } from './nucleotideCodes'
 
 export class ErrorAlignmentSequenceTooShort extends Error {
-  public constructor() {
+  constructor() {
     super('Unable to align: sequence is too short')
   }
 }
 
 export class ErrorAlignmentNoSeedMatches extends Error {
-  public constructor() {
+  constructor() {
     super('Unable to align: no seed matches')
   }
 }
 
 export class ErrorAlignmentBadSeedMatches extends Error {
-  public constructor() {
+  constructor() {
     super('Unable to align: too many insertions, deletions, duplications, or ambiguous seed matches')
   }
-}
-
-interface SeedMatch {
-  shift: number
-  score: number
-}
-
-interface SeedAlignment {
-  meanShift: number
-  bandWidth: number
-}
-
-interface ForwardTrace {
-  scores: Int32Array[]
-  paths: Int32Array[]
-}
-
-interface Alignment {
-  query: string[]
-  ref: string[]
-  alignmentScore: number
 }
 
 export const alignmentParameters = {
@@ -51,7 +30,7 @@ export const alignmentParameters = {
 }
 
 // determine the position where a particular kmer (string of length k) matches the reference sequence
-function seedMatch(kmer: string, ref: string, searchStart: number): SeedMatch {
+function seedMatch(kmer, ref, searchStart) {
   let tmpScore = 0
   let maxScore = 0
   let maxShift = -1
@@ -70,7 +49,7 @@ function seedMatch(kmer: string, ref: string, searchStart: number): SeedMatch {
   return { shift: maxShift, score: maxScore }
 }
 
-function seedAlignment(query: string, ref: string): SeedAlignment {
+function seedAlignment(query, ref) {
   const nSeeds = 29
   const seedLength = 21
   const margin = ref.length > 3000 ? 30 : Math.round(ref.length / 100)
@@ -119,7 +98,7 @@ function seedAlignment(query: string, ref: string): SeedAlignment {
 }
 
 // self made argmax function
-function argmax(d: number[]) {
+function argmax(d) {
   let tmpmax = d[0]
   let tmpii = 0
   d.forEach((x, i) => {
@@ -131,8 +110,8 @@ function argmax(d: number[]) {
   return [tmpii, tmpmax]
 }
 
-function scoreMatrix(query: string, ref: string, bandWidth: number, meanShift: number): ForwardTrace {
-  function indexToShift(si: number): number {
+function scoreMatrix(query, ref, bandWidth, meanShift) {
+  function indexToShift(si) {
     return si - bandWidth + meanShift
   }
 
@@ -212,15 +191,15 @@ function scoreMatrix(query: string, ref: string, bandWidth: number, meanShift: n
 }
 
 function backTrace(
-  query: string,
-  ref: string,
-  scores: Int32Array[],
-  paths: Int32Array[],
-  meanShift: number,
-): Alignment {
+  query,
+  ref,
+  scores,
+  paths,
+  meanShift,
+) {
   const bandWidth = (scores.length - 1) / 2
   const rowLength = scores[0].length
-  function indexToShift(si: number): number {
+  function indexToShift(si) {
     return si - bandWidth + meanShift
   }
 
@@ -294,7 +273,7 @@ function backTrace(
   }
 }
 
-export function alignPairwise(query: string, ref: string, minimalLength: number): Alignment {
+export function alignPairwise(query, ref, minimalLength) {
   if (query.length < minimalLength) {
     throw new ErrorAlignmentSequenceTooShort()
   }

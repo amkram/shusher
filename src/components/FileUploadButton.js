@@ -1,7 +1,7 @@
 import React from 'react';
 import Button from '@material-ui/core/Button';
 
-function FileUploader(props) {
+function FileUploadButton(props) {
     function handleUpload(event) {
       props.callback(event.target.files[0]);
     }
@@ -18,5 +18,5 @@ function FileUploader(props) {
 
 }
 
-export default FileUploader;
+export default FileUploadButton;
 

@@ -11,9 +11,9 @@ const fs = require('fs');
 const path = require("path");
 const { match } = require('assert');
 
-let viewSrc = fs.readFileSync(path.join(__dirname, "../node_modules/auspice/cli/view.js"), encoding="utf8");
+let viewSrc = fs.readFileSync(path.join(__dirname, "../../../node_modules/auspice/cli/view.js"), encoding="utf8");
 viewSrc = redirectHttpToHttps(viewSrc)
-fs.writeFileSync(path.join(__dirname, "../node_modules/auspice/cli/view.js"), viewSrc, encoding='utf8')
+fs.writeFileSync(path.join(__dirname, "../../../node_modules/auspice/cli/view.js"), viewSrc, encoding='utf8')
 
 /* ----------------------------------------------------------------------------------------- */
 
@@ -25,14 +25,22 @@ fs.writeFileSync(path.join(__dirname, "../node_modules/auspice/cli/view.js"), vi
  * following what we do on nextstrain.org
  */
 function redirectHttpToHttps(contents) {
-  console.log("Modifying the auspice server (view.js) to redirect http -> https on heroku");
+  console.log("Modifying the auspice server (view.js) to redirect http -> https on heroku and send correct cross-origin headers for WebAssembly.");
   const useCompression = "app.use(compression());";
   const fsImport = 'const fs = require("fs");';
+  
+  const corsHeaders = 'app.use(function(req,res,next){ '
+    + 'res.header("Cross-Origin-Opener-Policy", "same-origin"); '
+    + 'res.header("Cross-Origin-Embedder-Policy", "require-corp"); '
+    + 'next();'
+    + '});';
+
   if (contents.includes(useCompression) && contents.includes(fsImport)) {
      contents = contents.replace(fsImport, "const sslRedirect = require('heroku-ssl-redirect');" + "\n" + fsImport);
-    contents = contents.replace(useCompression, "app.use(sslRedirect());" + "\n  " + useCompression);
+    contents = contents.replace(useCompression, "app.use(sslRedirect());" + "\n  " + useCompression + "\n" + corsHeaders);
   } else {
     console.log("WARNING -- redirect HTTP -> HTTPS failed. Has the view.js contents changed?");
   }
+
   return contents;
 }

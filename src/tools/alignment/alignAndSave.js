@@ -1,5 +1,5 @@
 import { alignPairwise } from '../../vendor/nextclade/alignPairwise'
-import { referenceGenomeVersion } from '../constants.js'
+import { referenceGenomeVersion } from '../../data/constants.js'
 
 export function alignAndSave(names, sequences, reference, vcfFilename) {
     const numSamples = names.length;
@@ -38,20 +38,19 @@ export function alignAndSave(names, sequences, reference, vcfFilename) {
             //console.log(alignment);
             //console.log(sampleNum + ' - alt allele:' + altAllele);
             if (refAllele === altAllele) {
-                snps[refPos][sampleNum] = 'r';
-            } else if (altAllele === '-') {
+                snps[refPos][sampleNum] = '*';
+            } else if (altAllele === '-' || altAllele === 'N' || altAllele === 'n') {
                 snps[refPos][sampleNum] = '.';
             } else {
                 snps[refPos][sampleNum] = altAllele;
             }
         }
-        if (snps[refPos].every(x => x === 'r')) {
+        if (snps[refPos].every(x => x === '*')) {
             // no polymorphism
             delete snps[refPos];
         }
 
     }
-    console.log(snps);
     saveVcf(snps, reference, headerString, names);
 }       
 
@@ -69,76 +68,50 @@ function getAlignmentPos(alignedReference, referencePos) {
 }
 
 function saveVcf(snps, reference, headerString, sampleNames) {
-    const numSamples = sampleNames.length;
-    console.log('##fileformat=VCFv4.2');
-    console.log(headerString);
-    for (const pos in snps) {
-        var altListStr = '';
-        var altList = [];
-        for (var i = 0; i < snps[pos].length; i++) {
-            var altAllele = snps[pos][i];
-            if (altAllele != '.' && altAllele != 'r' && !altList.includes(altAllele)) {
-                altListStr += ',' + altAllele;
-                altList.push(altAllele);
-            }
-        }
-        altListStr = altListStr.substring(1);
-        if (altListStr === '') {
-            altListStr = 'N'; //missing data 
-        }
-        var genotypes = '';
-        for (var i = 0; i < numSamples; i++) {
-            var encoding = null;
-            if (snps[pos][i] == 'r') {
-                encoding = 0;
-            } else if (snps[pos][i] == '.') {
-                encoding = '.';
-            } else {
-                for (var j = 0; j < altList.length; j++) {
-                    if (snps[pos][i] == altList[j]) {
-                        encoding = j+1;
-                    }
+    return new Promise((resolve, reject) => {
+        const numSamples = sampleNames.length;
+        var vcfString = '';
+        vcfString += '##fileformat=VCFv4.2' + '\n';
+        vcfString += headerString + '\n';
+        for (const pos in snps) {
+            var altListStr = '';
+            var altList = [];
+            for (var i = 0; i < snps[pos].length; i++) {
+                var altAllele = snps[pos][i];
+                if (altAllele != '.' && altAllele != '*' && !altList.includes(altAllele)) {
+                    altListStr += ',' + altAllele;
+                    altList.push(altAllele);
                 }
             }
-            genotypes += '\t' + encoding;
+            altListStr = altListStr.substring(1);
+            if (altList.length == 0) {
+                altListStr = '.'; //missing data 
+            } else if (altList.every( (x) => x == '.')) {
+                altListStr = '.';
+            }
+            var genotypes = '';
+            for (var i = 0; i < numSamples; i++) {
+                var encoding = null;
+                if (snps[pos][i] == '*') {
+                    encoding = 0;
+                } else if (snps[pos][i] == '.') {
+                    encoding = '.';
+                } else {
+                    for (var j = 0; j < altList.length; j++) {
+                        if (snps[pos][i] == altList[j]) {
+                            encoding = j+1;
+                        }
+                    }
+                }
+                genotypes += '\t' + encoding;
+            }
+            var vcf_line = referenceGenomeVersion + '\t' + (pos*1+1) + '\t'
+                + '.' + '\t' + reference[pos] + '\t' + altListStr + '\t' + '.'
+                + '\t' + '.' + '\t' + '.' + '\t' + 'GT' + genotypes;
+            vcfString += vcf_line + '\n';
         }
-        var vcf_line = referenceGenomeVersion + '\t' + (pos*1+1) + '\t'
-            + '.' + '\t' + reference[pos] + '\t' + altListStr + '\t' + '.'
-            + '\t' + '.' + '\t' + '.' + '\t' + 'GT' + genotypes;
-        console.log(vcf_line);
-//        var vcf_line = 'REFERENCE' + '\t' + (pos*1+1) + '\t' + idList.join(',') + '\t' + refAllele + '\t' + altAlleles.join(',') + '\t.\t.\t.\tGT\t' + snps[pos].genotypes.join(',');
-    }
+        window.FS.writeFile('/new_samples.vcf', vcfString);
+        resolve();
+        //TODO: reject promise if saving file failed
+    });
 }
-
-
-
-/* TODO: unit tests
-
-    var alignments = [
-        {
-            ref:   'ACCGGGTTTTAAAC',
-            query: '-CCGGG-TTCAAAC'
-        },
-        {
-            ref:   'A-CCGGGTTTTAAAC',
-            query: 'ATCCGGG-TTCAATC'
-        },
-        {
-            ref:   'ACCGGGTTTTAAAC',
-            query: '-CCGGG-TTCAATC'
-        }
-    ];
-
-    snps = {
-        0: ['-', '.', '-'],
-        6: ['-', '-', '-'],
-        9: ['C', 'C', 'C'],
-        12: ['.', 'T', 'T']
-    }
-
-
-
-
-
-
-*/

@@ -1,17 +1,8 @@
-//import { readFasta } from './readFasta'
+import { readFasta } from '../files/fileHandling'
 import { alignAndSave } from './alignAndSave'
 
 export function fastaToVcf(fastaFilename, vcfFilename) {
-//     const fastaData = readFasta(fastaFilename);
-//     const sampleNames = fastaData[0];
-//     const sampleSequences = fastaData[1];    
-
-//     // align samples and store a vcf file of SNPs
-    const sampleNames = ['sample1', 'sample2', 'sample3'];
-    const ref = 'ACCGGGTTTTAAACT';
-    const sampleSequences = ['CCGGGTTCAAACN', 'ATCCGGGTTCAATCN', 'CCGGGTTCAATCN'];
-    alignAndSave(sampleNames, sampleSequences, ref, 'out.vcf'); 
+    const fastaData = readFasta(fastaFilename);
+    const reference = readFasta('/reference.fasta').sequences[0];
+    alignAndSave(fastaData.names, fastaData.sequences, reference, vcfFilename); 
  }
-
-
-export {}

@@ -10,8 +10,9 @@ import Paper from '@material-ui/core/Paper';
 
 const useStyles = makeStyles({
   table: {
-    minWidth: '50%',
-    maxWidth: '70%'
+    minWidth: '20%',
+    maxWidth: '50%',
+    margin: '0 auto'
   },
 });
 
@@ -19,9 +20,12 @@ const useStyles = makeStyles({
 
 export default function UsherResults(props) {
   const classes = useStyles();
-
   return (
     <div>
+        <h3 className={classes.heading}>View your samples on subtrees</h3>
+        Your samples were placed on {props.subtreeFiles.length} unique subtrees.
+        
+        <h3 className={classes.heading}>Uploaded sample information</h3>
         <TableContainer component={Paper}>
         <Table className={classes.table} size="small" aria-label="a dense table">
             <TableHead>

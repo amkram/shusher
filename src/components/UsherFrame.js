@@ -1,18 +1,19 @@
-import React from 'react';
-import { makeStyles } from '@material-ui/core/styles';
-import { FileDrop } from 'react-file-drop';
-import Collapse from '@material-ui/core/Collapse';
-import Fade from '@material-ui/core/Fade';
-import Chip from '@material-ui/core/Chip';
-import Card from '@material-ui/core/Card';
+import React from 'react'
+import { makeStyles } from '@material-ui/core/styles'
+import { FileDrop } from 'react-file-drop'
+import Collapse from '@material-ui/core/Collapse'
+import Fade from '@material-ui/core/Fade'
+import Chip from '@material-ui/core/Chip'
+import Card from '@material-ui/core/Card'
 import TreeForm from './TreeForm'
-import FileUploadButton from './FileUploadButton';
-import RunButton from './RunButton';
-import UsherProgress from './UsherProgress';
-import { getFileType } from '../tools/files/fileHandling';
-import { fastaToVcf } from '../tools/alignment/fastaToVcf';
-import { referenceGenomeUrl } from '../data/constants';
-import { ungzip } from 'node-gzip';
+import SubtreeForm from './SubtreeForm'
+import FileUploadButton from './FileUploadButton'
+import RunButton from './RunButton'
+import UsherProgress from './UsherProgress'
+import { getFileType } from '../tools/files/fileHandling'
+import { fastaToVcf } from '../tools/alignment/fastaToVcf'
+import { referenceGenomeUrl } from '../data/constants'
+import { ungzip } from 'node-gzip'
 import UsherResults from './UsherResults'
 import ProcessingFile from './ProcessingFile'
 
@@ -236,7 +237,9 @@ function UsherFrame(props) {
                 <Card className={classes.usherCard}>
                     <div className={classes.usherCardInner}>
                         <strong>Using tree:</strong>
-                        <TreeForm />
+                        <TreeForm /><br />
+                        <strong>Number of samples per subtree:</strong> <br />
+                        <SubtreeForm /><br />
                         <RunButton handleRunUsher={handleRunUsher} showLoading={!(props.latestTreeDownloaded && newSamplesReady)}/>
                     </div>
                 </Card>

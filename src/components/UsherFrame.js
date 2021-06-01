@@ -249,7 +249,7 @@ function UsherFrame(props) {
             <div>
                 <h3 className={classes.heading}>View Results</h3>
                 <Card className={classes.resultsCardInner}>
-                    {usherCompleted ? <UsherResults sampleData={sampleData} subtreeFiles={subtreeFiles}/>
+                    {usherCompleted ? <UsherResults sampleData={sampleData} subtreeFiles={subtreeFiles} showTreeWrapper={props.showTreeWrapper}/>
                     : <UsherProgress value={10*currentStage.id + (currentSample/totalSamples) * (80/totalSamples)} currentStage={currentStage}/>}
                 </Card>
             </div>

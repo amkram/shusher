@@ -50,18 +50,10 @@ class App extends React.Component {
 		};
 	}
 	
-
- 	testViz() {
-		if (!this.treeVisible) {
-			window.saveFileFromUrl('/zika.json', 'http://data.nextstrain.org/zika.json', 'application/json')
-				.then(() => {
-					var jsonFile = new File([window.FS.readFile('/zika.json', {'encoding': 'utf8'})],
-						"zika.json", { type: "application/json"});
-						console.log('Showing auspice JSON.');			
-						showTree(this.props.dispatch, jsonFile);
-						this.setState({treeVisible: true})
-				}).catch((e) => {console.log(e)})
-		}
+	showTreeWrapper(filename) {
+		new File([window.FS.readFile('/' + filename, {'encoding': 'utf8'})],
+						"subtree.nh", { type: "text/plain"});
+		showTree(this.props.dispatch, filename);
 	}
 
 	testAlign() {
@@ -109,7 +101,7 @@ class App extends React.Component {
 				<div className="logo">
 					<img className={classes.logoImg} src="/dist/img/logo.png" alt="UShER logo"/>
 					<Box className={classes.usherBox}>
-						<UsherFrame latestTreeDownloaded={this.state.latestTreeDownloaded}/>
+						<UsherFrame latestTreeDownloaded={this.state.latestTreeDownloaded} showTreeWrapper={this.showTreeWrapper}/>
 					</Box>
 				</div>
 			</div>

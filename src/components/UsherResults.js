@@ -20,12 +20,16 @@ const useStyles = makeStyles({
 
 export default function UsherResults(props) {
   const classes = useStyles();
-  const treeVisible = React.useState(false);
+  const [treeVisible, setTreeVisible] = React.useState(false);
   
   const openInAuspice = (subtreeNum) => {
+    console.log('Opening subtree ' + subtreeNum + ' in auspice.');
     var filename = 'subtree-' + subtreeNum + '.nh';
-    if (!this.treeVisible) {
+    if (!treeVisible) {
+            console.log('showing tree.');
 						props.showTreeWrapper(filename);
+            console.log('here');
+            setTreeVisible(true);
 		}
   }
   

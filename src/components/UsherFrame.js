@@ -147,7 +147,7 @@ function UsherFrame(props) {
         console.log(newSamplesReady);
         
         if (props.latestTreeDownloaded && newSamplesReady) {
-            var args = ['-k', '50', '-i', '/preload/filtered_6K.pb', '-v', '/new_samples.vcf', '-d', '/'];
+            var args = ['-k', '50', '-i', '/latest_tree.pb.gz', '-v', '/new_samples.vcf', '-d', '/'];
             window.callMain(args);
             console.log('Running usher.');
             setShowResults(true);
@@ -160,7 +160,7 @@ function UsherFrame(props) {
         return { sampleName, numPlacements, parsimonyScore };
     }
     const handleCompleted = (stderr, totalSamples) => {
-        stderr = "undefined\nOutput newick files will have branch lengths equal to the number of mutations of that branch.\n\nInitializing 8 worker threads.\n\nLoading existing mutation-annotated tree object from file /latest_tree.pb.gz\nCompleted in 25828 msec \n\nLoading VCF file\nCompleted in 5 msec \n\nFound 5 missing samples.\n\nAdding missing samples to the tree.\nCurrent tree size (#nodes): 544241\tSample name: Sample1\tParsimony score: 0\tNumber of parsimony-optimal placements: 1\nCompleted in 44818 msec \n\nCurrent tree size (#nodes): 544242\tSample name: Sample2\tParsimony score: 1\tNumber of parsimony-optimal placements: 1\nCompleted in 56186 msec \n\nCurrent tree size (#nodes): 544243\tSample name: Sample3\tParsimony score: 0\tNumber of parsimony-optimal placements: 1\nCompleted in 51586 msec \n\nCurrent tree size (#nodes): 544245\tSample name: Sample4\tParsimony score: 1\tNumber of parsimony-optimal placements: 1\nCompleted in 69274 msec \n\nCurrent tree size (#nodes): 544246\tSample name: Sample5\tParsimony score: 0\tNumber of parsimony-optimal placements: 1\nCompleted in 55873 msec \n\nWriting final tree to file //final-tree.nh \nThe parsimony score for this tree is: 710621 \nCompleted in 27578 msec \n\nWriting mutation paths to file //mutation-paths.txt \nCompleted in 2 msec \n\nWriting clade annotations to file //clades.txt \nCompleted in 1 msec \n\nComputing subtrees for added samples. \n\nWriting subtree 1 to file //subtree-1.nh.\nWriting list of mutations at the nodes of subtree 1 to file //subtree-1-mutations.txt\nSubtree 1 has condensed nodes.\nExpanding the condensed nodes for subtree 1 in file //subtree-1-expanded.txt\nWriting subtree 2 to file //subtree-2.nh.\nWriting list of mutations at the nodes of subtree 2 to file //subtree-2-mutations.txt\nSubtree 2 has condensed nodes.\nExpanding the condensed nodes for subtree 2 in file //subtree-2-expanded.txt\nCompleted in 567 msec \n";
+        //stderr = "undefined\nOutput newick files will have branch lengths equal to the number of mutations of that branch.\n\nInitializing 8 worker threads.\n\nLoading existing mutation-annotated tree object from file /latest_tree.pb.gz\nCompleted in 25828 msec \n\nLoading VCF file\nCompleted in 5 msec \n\nFound 5 missing samples.\n\nAdding missing samples to the tree.\nCurrent tree size (#nodes): 544241\tSample name: Sample1\tParsimony score: 0\tNumber of parsimony-optimal placements: 1\nCompleted in 44818 msec \n\nCurrent tree size (#nodes): 544242\tSample name: Sample2\tParsimony score: 1\tNumber of parsimony-optimal placements: 1\nCompleted in 56186 msec \n\nCurrent tree size (#nodes): 544243\tSample name: Sample3\tParsimony score: 0\tNumber of parsimony-optimal placements: 1\nCompleted in 51586 msec \n\nCurrent tree size (#nodes): 544245\tSample name: Sample4\tParsimony score: 1\tNumber of parsimony-optimal placements: 1\nCompleted in 69274 msec \n\nCurrent tree size (#nodes): 544246\tSample name: Sample5\tParsimony score: 0\tNumber of parsimony-optimal placements: 1\nCompleted in 55873 msec \n\nWriting final tree to file //final-tree.nh \nThe parsimony score for this tree is: 710621 \nCompleted in 27578 msec \n\nWriting mutation paths to file //mutation-paths.txt \nCompleted in 2 msec \n\nWriting clade annotations to file //clades.txt \nCompleted in 1 msec \n\nComputing subtrees for added samples. \n\nWriting subtree 1 to file //subtree-1.nh.\nWriting list of mutations at the nodes of subtree 1 to file //subtree-1-mutations.txt\nSubtree 1 has condensed nodes.\nExpanding the condensed nodes for subtree 1 in file //subtree-1-expanded.txt\nWriting subtree 2 to file //subtree-2.nh.\nWriting list of mutations at the nodes of subtree 2 to file //subtree-2-mutations.txt\nSubtree 2 has condensed nodes.\nExpanding the condensed nodes for subtree 2 in file //subtree-2-expanded.txt\nCompleted in 567 msec \n";
         setUsherCompleted(true);
         var sampleData = [];
         var subtreeFiles = stderr.match(/subtree-.*nh/g);
@@ -198,7 +198,6 @@ function UsherFrame(props) {
         }
     }
     
-        var sampleRows = []
 
     return (
         <div className={classes.root}>

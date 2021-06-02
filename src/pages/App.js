@@ -48,12 +48,14 @@ class App extends React.Component {
 			treeVisible: false,
 			latestTreeDownloaded: false
 		};
+		this.showTreeWrapper = this.showTreeWrapper.bind(this);
 	}
 	
 	showTreeWrapper(filename) {
-		new File([window.FS.readFile('/' + filename, {'encoding': 'utf8'})],
+		console.log("showTreeWrapper in App.js");
+		var file = new File([window.FS.readFile('/' + filename, {encoding: 'utf8'})],
 						"subtree.nh", { type: "text/plain"});
-		showTree(this.props.dispatch, filename);
+		showTree(this.props.dispatch, file);
 	}
 
 	testAlign() {
@@ -81,8 +83,6 @@ class App extends React.Component {
 			afterJS.onload = () => { 
 				console.log("Usher JS loaded.");
 				this.setState({usherLoaded: true});
-//				this.testAlign();
-				//				this.testViz(); 
 				var mimeType = 'application/octet-stream';
 				window.saveFileFromUrl('/latest_tree.pb.gz', latestTreeUrl, mimeType)
 					.then(() => {
@@ -90,6 +90,16 @@ class App extends React.Component {
 					});
 				
 			}
+
+			// Prevent loading file in browser upon drag-and-drop
+			window.addEventListener("dragover",function(e){
+				e = e || event;
+				e.preventDefault();
+			  },false);
+			  window.addEventListener("drop",function(e){
+				e = e || event;
+				e.preventDefault();
+			  },false);
 		}				
 	}
 	

@@ -235,7 +235,7 @@ Module.expectedDataFileDownloads++;
    "audio": 0
   } ],
   "remote_package_size": 13224870,
-  "package_uuid": "ab3c52e4-ee74-456e-a6d5-f2bbde168a51"
+  "package_uuid": "5e63dcbd-1e08-4a6e-b6f6-a2cb25bbfc9a"
  });
 })();
 
@@ -288,10 +288,6 @@ ENVIRONMENT_IS_NODE = typeof process === "object" && typeof process.versions ===
 ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIRONMENT_IS_WORKER;
 
 var ENVIRONMENT_IS_PTHREAD = Module["ENVIRONMENT_IS_PTHREAD"] || false;
-
-if (ENVIRONMENT_IS_PTHREAD) {
- buffer = Module["buffer"];
-}
 
 var _scriptDir = typeof document !== "undefined" && document.currentScript ? document.currentScript.src : undefined;
 
@@ -630,10 +626,6 @@ function removeFunction(index) {
 
 function addFunction(func, sig) {
  return addFunctionWasm(func, sig);
-}
-
-function makeBigInt(low, high, unsigned) {
- return unsigned ? +(low >>> 0) + +(high >>> 0) * 4294967296 : +(low >>> 0) + +(high | 0) * 4294967296;
 }
 
 var tempRet0 = 0;
@@ -1046,6 +1038,10 @@ function alignUp(x, multiple) {
 
 var HEAP, buffer, HEAP8, HEAPU8, HEAP16, HEAPU16, HEAP32, HEAPU32, HEAPF32, HEAPF64;
 
+if (ENVIRONMENT_IS_PTHREAD) {
+ buffer = Module["buffer"];
+}
+
 function updateGlobalBufferAndViews(buf) {
  buffer = buf;
  Module["HEAP8"] = HEAP8 = new Int8Array(buf);
@@ -1221,20 +1217,14 @@ function abort(what) {
  throw e;
 }
 
-function hasPrefix(str, prefix) {
- return String.prototype.startsWith ? str.startsWith(prefix) : str.indexOf(prefix) === 0;
-}
-
 var dataURIPrefix = "data:application/octet-stream;base64,";
 
 function isDataURI(filename) {
- return hasPrefix(filename, dataURIPrefix);
+ return filename.startsWith(dataURIPrefix);
 }
 
-var fileURIPrefix = "file://";
-
 function isFileURI(filename) {
- return hasPrefix(filename, fileURIPrefix);
+ return filename.startsWith("file://");
 }
 
 var wasmBinaryFile = "usher.wasm";
@@ -1305,8 +1295,8 @@ function createWasm() {
  if (!ENVIRONMENT_IS_PTHREAD) {
   addRunDependency("wasm-instantiate");
  }
- function receiveInstantiatedSource(output) {
-  receiveInstance(output["instance"], output["module"]);
+ function receiveInstantiationResult(result) {
+  receiveInstance(result["instance"], result["module"]);
  }
  function instantiateArrayBuffer(receiver) {
   return getBinaryPromise().then(function(binary) {
@@ -1323,14 +1313,14 @@ function createWasm() {
     credentials: "same-origin"
    }).then(function(response) {
     var result = WebAssembly.instantiateStreaming(response, info);
-    return result.then(receiveInstantiatedSource, function(reason) {
+    return result.then(receiveInstantiationResult, function(reason) {
      err("wasm streaming compile failed: " + reason);
      err("falling back to ArrayBuffer instantiation");
-     return instantiateArrayBuffer(receiveInstantiatedSource);
+     return instantiateArrayBuffer(receiveInstantiationResult);
     });
    });
   } else {
-   return instantiateArrayBuffer(receiveInstantiatedSource);
+   return instantiateArrayBuffer(receiveInstantiationResult);
   }
  }
  if (Module["instantiateWasm"]) {
@@ -1351,10 +1341,10 @@ var tempDouble;
 var tempI64;
 
 var ASM_CONSTS = {
- 117848: function() {
+ 127124: function() {
   throw "Canceled!";
  },
- 117866: function($0, $1) {
+ 127142: function($0, $1) {
   setTimeout(function() {
    __emscripten_do_dispatch_to_thread($0, $1);
   }, 0);
@@ -1900,6 +1890,16 @@ function ___cxa_atexit(a0, a1) {
  return _atexit(a0, a1);
 }
 
+function _pthread_cleanup_push(routine, arg) {
+ PThread.threadExitHandlers.push(function() {
+  wasmTable.get(routine)(arg);
+ });
+}
+
+function ___cxa_thread_atexit(a0, a1) {
+ return _pthread_cleanup_push(a0, a1);
+}
+
 function ExceptionInfo(excPtr) {
  this.excPtr = excPtr;
  this.ptr = excPtr - ExceptionInfoAttrs.SIZE;
@@ -1948,202 +1948,9 @@ function ExceptionInfo(excPtr) {
  };
 }
 
-function CatchInfo(ptr) {
- this.free = function() {
-  _free(this.ptr);
-  this.ptr = 0;
- };
- this.set_base_ptr = function(basePtr) {
-  GROWABLE_HEAP_I32()[this.ptr >> 2] = basePtr;
- };
- this.get_base_ptr = function() {
-  return GROWABLE_HEAP_I32()[this.ptr >> 2];
- };
- this.set_adjusted_ptr = function(adjustedPtr) {
-  var ptrSize = 4;
-  GROWABLE_HEAP_I32()[this.ptr + ptrSize >> 2] = adjustedPtr;
- };
- this.get_adjusted_ptr = function() {
-  var ptrSize = 4;
-  return GROWABLE_HEAP_I32()[this.ptr + ptrSize >> 2];
- };
- this.get_exception_ptr = function() {
-  var isPointer = ___cxa_is_pointer_type(this.get_exception_info().get_type());
-  if (isPointer) {
-   return GROWABLE_HEAP_I32()[this.get_base_ptr() >> 2];
-  }
-  var adjusted = this.get_adjusted_ptr();
-  if (adjusted !== 0) return adjusted;
-  return this.get_base_ptr();
- };
- this.get_exception_info = function() {
-  return new ExceptionInfo(this.get_base_ptr());
- };
- if (ptr === undefined) {
-  this.ptr = _malloc(8);
-  this.set_adjusted_ptr(0);
- } else {
-  this.ptr = ptr;
- }
-}
-
-var exceptionCaught = [];
-
-function exception_addRef(info) {
- info.add_ref();
-}
-
-var uncaughtExceptionCount = 0;
-
-function ___cxa_begin_catch(ptr) {
- var catchInfo = new CatchInfo(ptr);
- var info = catchInfo.get_exception_info();
- if (!info.get_caught()) {
-  info.set_caught(true);
-  uncaughtExceptionCount--;
- }
- info.set_rethrown(false);
- exceptionCaught.push(catchInfo);
- exception_addRef(info);
- return catchInfo.get_exception_ptr();
-}
-
 var exceptionLast = 0;
 
-function ___cxa_free_exception(ptr) {
- return _free(new ExceptionInfo(ptr).ptr);
-}
-
-function exception_decRef(info) {
- if (info.release_ref() && !info.get_rethrown()) {
-  var destructor = info.get_destructor();
-  if (destructor) {
-   wasmTable.get(destructor)(info.excPtr);
-  }
-  ___cxa_free_exception(info.excPtr);
- }
-}
-
-function ___cxa_end_catch() {
- _setThrew(0);
- var catchInfo = exceptionCaught.pop();
- exception_decRef(catchInfo.get_exception_info());
- catchInfo.free();
- exceptionLast = 0;
-}
-
-function ___resumeException(catchInfoPtr) {
- var catchInfo = new CatchInfo(catchInfoPtr);
- var ptr = catchInfo.get_base_ptr();
- if (!exceptionLast) {
-  exceptionLast = ptr;
- }
- catchInfo.free();
- throw ptr;
-}
-
-function ___cxa_find_matching_catch_2() {
- var thrown = exceptionLast;
- if (!thrown) {
-  setTempRet0(0 | 0);
-  return 0 | 0;
- }
- var info = new ExceptionInfo(thrown);
- var thrownType = info.get_type();
- var catchInfo = new CatchInfo();
- catchInfo.set_base_ptr(thrown);
- if (!thrownType) {
-  setTempRet0(0 | 0);
-  return catchInfo.ptr | 0;
- }
- var typeArray = Array.prototype.slice.call(arguments);
- var stackTop = stackSave();
- var exceptionThrowBuf = stackAlloc(4);
- GROWABLE_HEAP_I32()[exceptionThrowBuf >> 2] = thrown;
- for (var i = 0; i < typeArray.length; i++) {
-  var caughtType = typeArray[i];
-  if (caughtType === 0 || caughtType === thrownType) {
-   break;
-  }
-  if (___cxa_can_catch(caughtType, thrownType, exceptionThrowBuf)) {
-   var adjusted = GROWABLE_HEAP_I32()[exceptionThrowBuf >> 2];
-   if (thrown !== adjusted) {
-    catchInfo.set_adjusted_ptr(adjusted);
-   }
-   setTempRet0(caughtType | 0);
-   return catchInfo.ptr | 0;
-  }
- }
- stackRestore(stackTop);
- setTempRet0(thrownType | 0);
- return catchInfo.ptr | 0;
-}
-
-function ___cxa_find_matching_catch_3() {
- var thrown = exceptionLast;
- if (!thrown) {
-  setTempRet0(0 | 0);
-  return 0 | 0;
- }
- var info = new ExceptionInfo(thrown);
- var thrownType = info.get_type();
- var catchInfo = new CatchInfo();
- catchInfo.set_base_ptr(thrown);
- if (!thrownType) {
-  setTempRet0(0 | 0);
-  return catchInfo.ptr | 0;
- }
- var typeArray = Array.prototype.slice.call(arguments);
- var stackTop = stackSave();
- var exceptionThrowBuf = stackAlloc(4);
- GROWABLE_HEAP_I32()[exceptionThrowBuf >> 2] = thrown;
- for (var i = 0; i < typeArray.length; i++) {
-  var caughtType = typeArray[i];
-  if (caughtType === 0 || caughtType === thrownType) {
-   break;
-  }
-  if (___cxa_can_catch(caughtType, thrownType, exceptionThrowBuf)) {
-   var adjusted = GROWABLE_HEAP_I32()[exceptionThrowBuf >> 2];
-   if (thrown !== adjusted) {
-    catchInfo.set_adjusted_ptr(adjusted);
-   }
-   setTempRet0(caughtType | 0);
-   return catchInfo.ptr | 0;
-  }
- }
- stackRestore(stackTop);
- setTempRet0(thrownType | 0);
- return catchInfo.ptr | 0;
-}
-
-function ___cxa_rethrow() {
- var catchInfo = exceptionCaught.pop();
- if (!catchInfo) {
-  abort("no exception to throw");
- }
- var info = catchInfo.get_exception_info();
- var ptr = catchInfo.get_base_ptr();
- if (!info.get_rethrown()) {
-  exceptionCaught.push(catchInfo);
-  info.set_rethrown(true);
-  info.set_caught(false);
-  uncaughtExceptionCount++;
- } else {
-  catchInfo.free();
- }
- exceptionLast = ptr;
- throw ptr;
-}
-
-function _pthread_cleanup_push(routine, arg) {
- PThread.threadExitHandlers.push(function() {
-  wasmTable.get(routine)(arg);
- });
-}
-
-function ___cxa_thread_atexit(a0, a1) {
- return _pthread_cleanup_push(a0, a1);
-}
+var uncaughtExceptionCount = 0;
 
 function ___cxa_throw(ptr, type, destructor) {
  var info = new ExceptionInfo(ptr);
@@ -2151,10 +1958,6 @@ function ___cxa_throw(ptr, type, destructor) {
  exceptionLast = ptr;
  uncaughtExceptionCount++;
  throw ptr;
-}
-
-function ___cxa_uncaught_exceptions() {
- return uncaughtExceptionCount;
 }
 
 var PATH = {
@@ -2377,7 +2180,7 @@ var TTY = {
      try {
       bytesRead = nodeFS.readSync(process.stdin.fd, buf, 0, BUFSIZE, null);
      } catch (e) {
-      if (e.toString().indexOf("EOF") != -1) bytesRead = 0; else throw e;
+      if (e.toString().includes("EOF")) bytesRead = 0; else throw e;
      }
      if (bytesRead > 0) {
       result = buf.slice(0, bytesRead).toString("utf-8");
@@ -2436,7 +2239,7 @@ var TTY = {
 };
 
 function mmapAlloc(size) {
- var alignedSize = alignMemory(size, 16384);
+ var alignedSize = alignMemory(size, 65536);
  var ptr = _malloc(alignedSize);
  while (size < alignedSize) GROWABLE_HEAP_I8()[ptr + size++] = 0;
  return ptr;
@@ -2948,11 +2751,11 @@ var FS = {
   if (FS.ignorePermissions) {
    return 0;
   }
-  if (perms.indexOf("r") !== -1 && !(node.mode & 292)) {
+  if (perms.includes("r") && !(node.mode & 292)) {
    return 2;
-  } else if (perms.indexOf("w") !== -1 && !(node.mode & 146)) {
+  } else if (perms.includes("w") && !(node.mode & 146)) {
    return 2;
-  } else if (perms.indexOf("x") !== -1 && !(node.mode & 73)) {
+  } else if (perms.includes("x") && !(node.mode & 73)) {
    return 2;
   }
   return 0;
@@ -3189,7 +2992,7 @@ var FS = {
    var current = FS.nameTable[hash];
    while (current) {
     var next = current.name_next;
-    if (mounts.indexOf(current.mount) !== -1) {
+    if (mounts.includes(current.mount)) {
      FS.destroyNode(current);
     }
     current = next;
@@ -4796,8 +4599,17 @@ function _emscripten_futex_wait(addr, val, timeout) {
  }
 }
 
+function _emscripten_get_heap_max() {
+ return 2147483648;
+}
+
 function _emscripten_memcpy_big(dest, src, num) {
  GROWABLE_HEAP_U8().copyWithin(dest, src, src + num);
+}
+
+function _emscripten_num_logical_cores() {
+ if (ENVIRONMENT_IS_NODE) return require("os").cpus().length;
+ return navigator["hardwareConcurrency"];
 }
 
 function _emscripten_proxy_to_main_thread_js(index, sync) {
@@ -5218,7 +5030,7 @@ var GL = {
   __webgl_enable_WEBGL_multi_draw(GLctx);
   var exts = GLctx.getSupportedExtensions() || [];
   exts.forEach(function(ext) {
-   if (ext.indexOf("lose_context") < 0 && ext.indexOf("debug") < 0) {
+   if (!ext.includes("lose_context") && !ext.includes("debug")) {
     GLctx.getExtension(ext);
    }
   });
@@ -5388,19 +5200,11 @@ function _fd_write(fd, iov, iovcnt, pnum) {
  }
 }
 
-function _getTempRet0() {
- return getTempRet0() | 0;
-}
-
 function _gettimeofday(ptr) {
  var now = Date.now();
  GROWABLE_HEAP_I32()[ptr >> 2] = now / 1e3 | 0;
  GROWABLE_HEAP_I32()[ptr + 4 >> 2] = now % 1e3 * 1e3 | 0;
  return 0;
-}
-
-function _llvm_eh_typeid_for(type) {
- return type;
 }
 
 function _pthread_cleanup_pop(execute) {
@@ -5518,8 +5322,82 @@ function _pthread_create(pthread_ptr, attr, start_routine, arg) {
  return spawnThread(threadParams);
 }
 
-function _setTempRet0($i) {
- setTempRet0($i | 0);
+function _pthread_detach(thread) {
+ if (!thread) {
+  err("pthread_detach attempted on a null thread pointer!");
+  return ERRNO_CODES.ESRCH;
+ }
+ var self = GROWABLE_HEAP_I32()[thread + 12 >> 2];
+ if (self !== thread) {
+  err("pthread_detach attempted on thread " + thread + ", which does not point to a valid thread, or does not exist anymore!");
+  return ERRNO_CODES.ESRCH;
+ }
+ var wasDetached = Atomics.compareExchange(GROWABLE_HEAP_U32(), thread + 64 >> 2, 0, 2);
+ return wasDetached ? ERRNO_CODES.EINVAL : 0;
+}
+
+function __pthread_testcancel_js() {
+ if (!ENVIRONMENT_IS_PTHREAD) return;
+ var tb = _pthread_self();
+ if (!tb) return;
+ var cancelDisabled = Atomics.load(GROWABLE_HEAP_U32(), tb + 56 >> 2);
+ if (cancelDisabled) return;
+ var canceled = Atomics.load(GROWABLE_HEAP_U32(), tb + 0 >> 2);
+ if (canceled == 2) throw "Canceled!";
+}
+
+function __emscripten_do_pthread_join(thread, status, block) {
+ if (!thread) {
+  err("pthread_join attempted on a null thread pointer!");
+  return ERRNO_CODES.ESRCH;
+ }
+ if (ENVIRONMENT_IS_PTHREAD && _pthread_self() == thread) {
+  err("PThread " + thread + " is attempting to join to itself!");
+  return ERRNO_CODES.EDEADLK;
+ } else if (!ENVIRONMENT_IS_PTHREAD && _emscripten_main_browser_thread_id() == thread) {
+  err("Main thread " + thread + " is attempting to join to itself!");
+  return ERRNO_CODES.EDEADLK;
+ }
+ var self = GROWABLE_HEAP_I32()[thread + 12 >> 2];
+ if (self !== thread) {
+  err("pthread_join attempted on thread " + thread + ", which does not point to a valid thread, or does not exist anymore!");
+  return ERRNO_CODES.ESRCH;
+ }
+ var detached = Atomics.load(GROWABLE_HEAP_U32(), thread + 64 >> 2);
+ if (detached) {
+  err("Attempted to join thread " + thread + ", which was already detached!");
+  return ERRNO_CODES.EINVAL;
+ }
+ if (block) {
+  _emscripten_check_blocking_allowed();
+ }
+ for (;;) {
+  var threadStatus = Atomics.load(GROWABLE_HEAP_U32(), thread + 0 >> 2);
+  if (threadStatus == 1) {
+   var threadExitCode = Atomics.load(GROWABLE_HEAP_U32(), thread + 4 >> 2);
+   if (status) GROWABLE_HEAP_I32()[status >> 2] = threadExitCode;
+   Atomics.store(GROWABLE_HEAP_U32(), thread + 64 >> 2, 1);
+   if (!ENVIRONMENT_IS_PTHREAD) cleanupThread(thread); else postMessage({
+    "cmd": "cleanupThread",
+    "thread": thread
+   });
+   return 0;
+  }
+  if (!block) {
+   return ERRNO_CODES.EBUSY;
+  }
+  __pthread_testcancel_js();
+  if (!ENVIRONMENT_IS_PTHREAD) _emscripten_main_thread_process_queued_calls();
+  _emscripten_futex_wait(thread + 0, threadStatus, ENVIRONMENT_IS_PTHREAD ? 100 : 1);
+ }
+}
+
+function _pthread_join(thread, status) {
+ return __emscripten_do_pthread_join(thread, status, true);
+}
+
+function _setTempRet0(val) {
+ setTempRet0(val);
 }
 
 function __isLeapYear(year) {
@@ -5805,7 +5683,7 @@ function _strftime(s, maxsize, format, tm) {
   }
  };
  for (var rule in EXPANSION_RULES_2) {
-  if (pattern.indexOf(rule) >= 0) {
+  if (pattern.includes(rule)) {
    pattern = pattern.replace(new RegExp(rule, "g"), EXPANSION_RULES_2[rule](date));
   }
  }
@@ -5922,16 +5800,8 @@ var asmLibraryArg = {
  "__clock_gettime": ___clock_gettime,
  "__cxa_allocate_exception": ___cxa_allocate_exception,
  "__cxa_atexit": ___cxa_atexit,
- "__cxa_begin_catch": ___cxa_begin_catch,
- "__cxa_end_catch": ___cxa_end_catch,
- "__cxa_find_matching_catch_2": ___cxa_find_matching_catch_2,
- "__cxa_find_matching_catch_3": ___cxa_find_matching_catch_3,
- "__cxa_free_exception": ___cxa_free_exception,
- "__cxa_rethrow": ___cxa_rethrow,
  "__cxa_thread_atexit": ___cxa_thread_atexit,
  "__cxa_throw": ___cxa_throw,
- "__cxa_uncaught_exceptions": ___cxa_uncaught_exceptions,
- "__resumeException": ___resumeException,
  "__sys_fcntl64": ___sys_fcntl64,
  "__sys_ioctl": ___sys_ioctl,
  "__sys_mkdir": ___sys_mkdir,
@@ -5944,8 +5814,10 @@ var asmLibraryArg = {
  "emscripten_conditional_set_current_thread_status": _emscripten_conditional_set_current_thread_status,
  "emscripten_futex_wait": _emscripten_futex_wait,
  "emscripten_futex_wake": _emscripten_futex_wake,
+ "emscripten_get_heap_max": _emscripten_get_heap_max,
  "emscripten_get_now": _emscripten_get_now,
  "emscripten_memcpy_big": _emscripten_memcpy_big,
+ "emscripten_num_logical_cores": _emscripten_num_logical_cores,
  "emscripten_receive_on_main_thread_js": _emscripten_receive_on_main_thread_js,
  "emscripten_resize_heap": _emscripten_resize_heap,
  "emscripten_set_canvas_element_size": _emscripten_set_canvas_element_size,
@@ -5959,45 +5831,14 @@ var asmLibraryArg = {
  "fd_read": _fd_read,
  "fd_seek": _fd_seek,
  "fd_write": _fd_write,
- "getTempRet0": _getTempRet0,
  "gettimeofday": _gettimeofday,
  "initPthreadsJS": initPthreadsJS,
- "invoke_diii": invoke_diii,
- "invoke_fii": invoke_fii,
- "invoke_fiii": invoke_fiii,
- "invoke_i": invoke_i,
- "invoke_ii": invoke_ii,
- "invoke_iif": invoke_iif,
- "invoke_iii": invoke_iii,
- "invoke_iiif": invoke_iiif,
- "invoke_iiifi": invoke_iiifi,
- "invoke_iiii": invoke_iiii,
- "invoke_iiiif": invoke_iiiif,
- "invoke_iiiii": invoke_iiiii,
- "invoke_iiiiid": invoke_iiiiid,
- "invoke_iiiiii": invoke_iiiiii,
- "invoke_iiiiiii": invoke_iiiiiii,
- "invoke_iiiiiiii": invoke_iiiiiiii,
- "invoke_iiiiiiiiiii": invoke_iiiiiiiiiii,
- "invoke_iiiiiiiiiiii": invoke_iiiiiiiiiiii,
- "invoke_iiiiiiiiiiiii": invoke_iiiiiiiiiiiii,
- "invoke_jiiii": invoke_jiiii,
- "invoke_v": invoke_v,
- "invoke_vi": invoke_vi,
- "invoke_vii": invoke_vii,
- "invoke_viii": invoke_viii,
- "invoke_viiii": invoke_viiii,
- "invoke_viiiii": invoke_viiiii,
- "invoke_viiiiii": invoke_viiiiii,
- "invoke_viiiiiii": invoke_viiiiiii,
- "invoke_viiiiiiiiii": invoke_viiiiiiiiii,
- "invoke_viiiiiiiiiiiiiii": invoke_viiiiiiiiiiiiiii,
- "invoke_viijii": invoke_viijii,
- "llvm_eh_typeid_for": _llvm_eh_typeid_for,
  "memory": wasmMemory,
  "pthread_cleanup_pop": _pthread_cleanup_pop,
  "pthread_cleanup_push": _pthread_cleanup_push,
  "pthread_create": _pthread_create,
+ "pthread_detach": _pthread_detach,
+ "pthread_join": _pthread_join,
  "setTempRet0": _setTempRet0,
  "strftime_l": _strftime_l
 };
@@ -6028,24 +5869,12 @@ var _pthread_self = Module["_pthread_self"] = function() {
  return (_pthread_self = Module["_pthread_self"] = Module["asm"]["pthread_self"]).apply(null, arguments);
 };
 
-var _emscripten_tls_init = Module["_emscripten_tls_init"] = function() {
- return (_emscripten_tls_init = Module["_emscripten_tls_init"] = Module["asm"]["emscripten_tls_init"]).apply(null, arguments);
-};
-
-var _emscripten_get_global_libc = Module["_emscripten_get_global_libc"] = function() {
- return (_emscripten_get_global_libc = Module["_emscripten_get_global_libc"] = Module["asm"]["emscripten_get_global_libc"]).apply(null, arguments);
-};
-
 var _memset = Module["_memset"] = function() {
  return (_memset = Module["_memset"] = Module["asm"]["memset"]).apply(null, arguments);
 };
 
-var ___emscripten_pthread_data_constructor = Module["___emscripten_pthread_data_constructor"] = function() {
- return (___emscripten_pthread_data_constructor = Module["___emscripten_pthread_data_constructor"] = Module["asm"]["__emscripten_pthread_data_constructor"]).apply(null, arguments);
-};
-
-var ___pthread_tsd_run_dtors = Module["___pthread_tsd_run_dtors"] = function() {
- return (___pthread_tsd_run_dtors = Module["___pthread_tsd_run_dtors"] = Module["asm"]["__pthread_tsd_run_dtors"]).apply(null, arguments);
+var _emscripten_tls_init = Module["_emscripten_tls_init"] = function() {
+ return (_emscripten_tls_init = Module["_emscripten_tls_init"] = Module["asm"]["emscripten_tls_init"]).apply(null, arguments);
 };
 
 var _emscripten_current_thread_process_queued_calls = Module["_emscripten_current_thread_process_queued_calls"] = function() {
@@ -6092,6 +5921,18 @@ var __emscripten_thread_init = Module["__emscripten_thread_init"] = function() {
  return (__emscripten_thread_init = Module["__emscripten_thread_init"] = Module["asm"]["_emscripten_thread_init"]).apply(null, arguments);
 };
 
+var ___pthread_tsd_run_dtors = Module["___pthread_tsd_run_dtors"] = function() {
+ return (___pthread_tsd_run_dtors = Module["___pthread_tsd_run_dtors"] = Module["asm"]["__pthread_tsd_run_dtors"]).apply(null, arguments);
+};
+
+var _emscripten_get_global_libc = Module["_emscripten_get_global_libc"] = function() {
+ return (_emscripten_get_global_libc = Module["_emscripten_get_global_libc"] = Module["asm"]["emscripten_get_global_libc"]).apply(null, arguments);
+};
+
+var ___emscripten_pthread_data_constructor = Module["___emscripten_pthread_data_constructor"] = function() {
+ return (___emscripten_pthread_data_constructor = Module["___emscripten_pthread_data_constructor"] = Module["asm"]["__emscripten_pthread_data_constructor"]).apply(null, arguments);
+};
+
 var stackSave = Module["stackSave"] = function() {
  return (stackSave = Module["stackSave"] = Module["asm"]["stackSave"]).apply(null, arguments);
 };
@@ -6106,18 +5947,6 @@ var stackAlloc = Module["stackAlloc"] = function() {
 
 var _emscripten_stack_set_limits = Module["_emscripten_stack_set_limits"] = function() {
  return (_emscripten_stack_set_limits = Module["_emscripten_stack_set_limits"] = Module["asm"]["emscripten_stack_set_limits"]).apply(null, arguments);
-};
-
-var _setThrew = Module["_setThrew"] = function() {
- return (_setThrew = Module["_setThrew"] = Module["asm"]["setThrew"]).apply(null, arguments);
-};
-
-var ___cxa_can_catch = Module["___cxa_can_catch"] = function() {
- return (___cxa_can_catch = Module["___cxa_can_catch"] = Module["asm"]["__cxa_can_catch"]).apply(null, arguments);
-};
-
-var ___cxa_is_pointer_type = Module["___cxa_is_pointer_type"] = function() {
- return (___cxa_is_pointer_type = Module["___cxa_is_pointer_type"] = Module["asm"]["__cxa_is_pointer_type"]).apply(null, arguments);
 };
 
 var _memalign = Module["_memalign"] = function() {
@@ -6172,350 +6001,9 @@ var dynCall_iiiiiijj = Module["dynCall_iiiiiijj"] = function() {
  return (dynCall_iiiiiijj = Module["dynCall_iiiiiijj"] = Module["asm"]["dynCall_iiiiiijj"]).apply(null, arguments);
 };
 
-var __emscripten_allow_main_runtime_queued_calls = Module["__emscripten_allow_main_runtime_queued_calls"] = 117832;
+var __emscripten_allow_main_runtime_queued_calls = Module["__emscripten_allow_main_runtime_queued_calls"] = 126816;
 
-var __emscripten_main_thread_futex = Module["__emscripten_main_thread_futex"] = 125540;
-
-function invoke_viii(index, a1, a2, a3) {
- var sp = stackSave();
- try {
-  wasmTable.get(index)(a1, a2, a3);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_iiii(index, a1, a2, a3) {
- var sp = stackSave();
- try {
-  return wasmTable.get(index)(a1, a2, a3);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_iif(index, a1, a2) {
- var sp = stackSave();
- try {
-  return wasmTable.get(index)(a1, a2);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_iii(index, a1, a2) {
- var sp = stackSave();
- try {
-  return wasmTable.get(index)(a1, a2);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_vi(index, a1) {
- var sp = stackSave();
- try {
-  wasmTable.get(index)(a1);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_ii(index, a1) {
- var sp = stackSave();
- try {
-  return wasmTable.get(index)(a1);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_vii(index, a1, a2) {
- var sp = stackSave();
- try {
-  wasmTable.get(index)(a1, a2);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_viiiiiii(index, a1, a2, a3, a4, a5, a6, a7) {
- var sp = stackSave();
- try {
-  wasmTable.get(index)(a1, a2, a3, a4, a5, a6, a7);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_iiiiii(index, a1, a2, a3, a4, a5) {
- var sp = stackSave();
- try {
-  return wasmTable.get(index)(a1, a2, a3, a4, a5);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_v(index) {
- var sp = stackSave();
- try {
-  wasmTable.get(index)();
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_fii(index, a1, a2) {
- var sp = stackSave();
- try {
-  return wasmTable.get(index)(a1, a2);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_viiiiii(index, a1, a2, a3, a4, a5, a6) {
- var sp = stackSave();
- try {
-  wasmTable.get(index)(a1, a2, a3, a4, a5, a6);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_iiiif(index, a1, a2, a3, a4) {
- var sp = stackSave();
- try {
-  return wasmTable.get(index)(a1, a2, a3, a4);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_iiif(index, a1, a2, a3) {
- var sp = stackSave();
- try {
-  return wasmTable.get(index)(a1, a2, a3);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_viiii(index, a1, a2, a3, a4) {
- var sp = stackSave();
- try {
-  wasmTable.get(index)(a1, a2, a3, a4);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_iiiii(index, a1, a2, a3, a4) {
- var sp = stackSave();
- try {
-  return wasmTable.get(index)(a1, a2, a3, a4);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_iiifi(index, a1, a2, a3, a4) {
- var sp = stackSave();
- try {
-  return wasmTable.get(index)(a1, a2, a3, a4);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_i(index) {
- var sp = stackSave();
- try {
-  return wasmTable.get(index)();
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_iiiiiii(index, a1, a2, a3, a4, a5, a6) {
- var sp = stackSave();
- try {
-  return wasmTable.get(index)(a1, a2, a3, a4, a5, a6);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_viiiii(index, a1, a2, a3, a4, a5) {
- var sp = stackSave();
- try {
-  wasmTable.get(index)(a1, a2, a3, a4, a5);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_viijii(index, a1, a2, a3, a4, a5, a6) {
- var sp = stackSave();
- try {
-  dynCall_viijii(index, a1, a2, a3, a4, a5, a6);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_iiiiid(index, a1, a2, a3, a4, a5) {
- var sp = stackSave();
- try {
-  return wasmTable.get(index)(a1, a2, a3, a4, a5);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_iiiiiiii(index, a1, a2, a3, a4, a5, a6, a7) {
- var sp = stackSave();
- try {
-  return wasmTable.get(index)(a1, a2, a3, a4, a5, a6, a7);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_iiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) {
- var sp = stackSave();
- try {
-  return wasmTable.get(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_jiiii(index, a1, a2, a3, a4) {
- var sp = stackSave();
- try {
-  return dynCall_jiiii(index, a1, a2, a3, a4);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_iiiiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12) {
- var sp = stackSave();
- try {
-  return wasmTable.get(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_fiii(index, a1, a2, a3) {
- var sp = stackSave();
- try {
-  return wasmTable.get(index)(a1, a2, a3);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_diii(index, a1, a2, a3) {
- var sp = stackSave();
- try {
-  return wasmTable.get(index)(a1, a2, a3);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_iiiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11) {
- var sp = stackSave();
- try {
-  return wasmTable.get(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_viiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) {
- var sp = stackSave();
- try {
-  wasmTable.get(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_viiiiiiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15) {
- var sp = stackSave();
- try {
-  wasmTable.get(index)(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
+var __emscripten_main_thread_futex = Module["__emscripten_main_thread_futex"] = 192284;
 
 Module["addRunDependency"] = addRunDependency;
 

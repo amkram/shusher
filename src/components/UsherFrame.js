@@ -71,8 +71,9 @@ const useStyles = makeStyles((theme) => ({
     usherCard: {
         display: 'block',
         margin: '0 auto',
-        height: '10vh',
-        minWidth: '400px'
+        minWidth: '400px',
+        textAlign: 'left',
+        paddingLeft: '30px'
     },
     usherCardInner: {
         display: 'flex',
@@ -80,6 +81,13 @@ const useStyles = makeStyles((theme) => ({
         marginTop: '4vh',
         fontSize: 16
     },
+    usherCardItem: {
+        display: 'inline'
+    },
+    form: {
+      display: 'inline',
+      maxWidth: '30%'  
+    }
   }));
 
 function UsherFrame(props) {
@@ -235,17 +243,23 @@ function UsherFrame(props) {
                 <h3 className={classes.heading}>Place samples</h3>
                 <Card className={classes.usherCard}>
                     <div className={classes.usherCardInner}>
-                        <Grid container spacing={3}>
-                            <Grid item xs={12}>
-                            <strong>Using tree:</strong>
-                            <TreeForm />
-                            </Grid>
-                            <Grid item xs={12}>
-                            <strong>Number of samples per subtree:</strong> <br />
-                            <SubtreeForm />
-                            </Grid>
+                    <Grid container spacing={3}>
+                        <Grid item xs={4}>
+                                <strong>Using tree:</strong>
+                        </Grid>
+                        <Grid item xs={4}>
+                                <strong>Number of samples per subtree:</strong> <br />
+                        </Grid>
+                        <Grid item xs={4}>
+                            <TreeForm className={classes.form}/>
+                        </Grid>
+                        <Grid item xs={4}>
+                            <SubtreeForm className={classes.form}/>
+                        </Grid>
+                        <Grid item xs={4}>
                             <RunButton handleRunUsher={handleRunUsher} showLoading={!(props.latestTreeDownloaded && newSamplesReady)}/>
                         </Grid>
+                    </Grid>
                     </div>
                 </Card>
             </div>

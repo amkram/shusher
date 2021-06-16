@@ -16,6 +16,7 @@ import { referenceGenomeUrl } from '../data/constants'
 import { ungzip } from 'node-gzip'
 import UsherResults from './UsherResults'
 import ProcessingFile from './ProcessingFile'
+import Grid from '@material-ui/core/Grid'
 
 
 const useStyles = makeStyles((theme) => ({
@@ -160,7 +161,6 @@ function UsherFrame(props) {
         return { sampleName, numPlacements, parsimonyScore };
     }
     const handleCompleted = (stderr, totalSamples) => {
-        //stderr = "undefined\nOutput newick files will have branch lengths equal to the number of mutations of that branch.\n\nInitializing 8 worker threads.\n\nLoading existing mutation-annotated tree object from file /latest_tree.pb.gz\nCompleted in 25828 msec \n\nLoading VCF file\nCompleted in 5 msec \n\nFound 5 missing samples.\n\nAdding missing samples to the tree.\nCurrent tree size (#nodes): 544241\tSample name: Sample1\tParsimony score: 0\tNumber of parsimony-optimal placements: 1\nCompleted in 44818 msec \n\nCurrent tree size (#nodes): 544242\tSample name: Sample2\tParsimony score: 1\tNumber of parsimony-optimal placements: 1\nCompleted in 56186 msec \n\nCurrent tree size (#nodes): 544243\tSample name: Sample3\tParsimony score: 0\tNumber of parsimony-optimal placements: 1\nCompleted in 51586 msec \n\nCurrent tree size (#nodes): 544245\tSample name: Sample4\tParsimony score: 1\tNumber of parsimony-optimal placements: 1\nCompleted in 69274 msec \n\nCurrent tree size (#nodes): 544246\tSample name: Sample5\tParsimony score: 0\tNumber of parsimony-optimal placements: 1\nCompleted in 55873 msec \n\nWriting final tree to file //final-tree.nh \nThe parsimony score for this tree is: 710621 \nCompleted in 27578 msec \n\nWriting mutation paths to file //mutation-paths.txt \nCompleted in 2 msec \n\nWriting clade annotations to file //clades.txt \nCompleted in 1 msec \n\nComputing subtrees for added samples. \n\nWriting subtree 1 to file //subtree-1.nh.\nWriting list of mutations at the nodes of subtree 1 to file //subtree-1-mutations.txt\nSubtree 1 has condensed nodes.\nExpanding the condensed nodes for subtree 1 in file //subtree-1-expanded.txt\nWriting subtree 2 to file //subtree-2.nh.\nWriting list of mutations at the nodes of subtree 2 to file //subtree-2-mutations.txt\nSubtree 2 has condensed nodes.\nExpanding the condensed nodes for subtree 2 in file //subtree-2-expanded.txt\nCompleted in 567 msec \n";
         setUsherCompleted(true);
         var sampleData = [];
         var subtreeFiles = stderr.match(/subtree-.*nh/g);
@@ -182,7 +182,7 @@ function UsherFrame(props) {
             var samplesFinished = (stderr.match(/Sample name/g) || []).length;
             var startedSamples = (stderr.match(/Found/g) || []).length;
             var totalSamples = startedSamples > 0 ? parseInt(stderr.split('Found ')[1].split(' missing samples.')[0]) : Infinity;
-            completed = stderr.match(/Computing subtrees/g) ? (stderr.split('Computing subtrees')[1].match(/Completed/g) || []).length : false;
+            completed = stderr.match(/Computing subtrees/g) ? (stderr.split('Computing subtrees for added')[1].match(/Completed/g) || []).length == 1: false;
             setTotalSamples(totalSamples);
             var savingTree = (stderr.match(/Writing/g) || []).length;
             if (!startedSamples) {
@@ -227,7 +227,7 @@ function UsherFrame(props) {
                 className={classes.loadedFileChip}
                 onDelete={handleDelete}
                 icon={<img src="/dist/img/icon-file-light.png" width='20px'/>}
-                label={loadedFile.name + ' (' + Number(loadedFile.size / 1000000).toFixed(1) + ' MB)'}
+                label={loadedFile.name + ' (' + Number(loadedFile.size / 1000000).toFixed(2) + ' MB)'}
             /> 
         </Fade>
         <Fade in={uploadCollapsed}>
@@ -235,11 +235,17 @@ function UsherFrame(props) {
                 <h3 className={classes.heading}>Place samples</h3>
                 <Card className={classes.usherCard}>
                     <div className={classes.usherCardInner}>
-                        <strong>Using tree:</strong>
-                        <TreeForm /><br />
-                        <strong>Number of samples per subtree:</strong> <br />
-                        <SubtreeForm /><br />
-                        <RunButton handleRunUsher={handleRunUsher} showLoading={!(props.latestTreeDownloaded && newSamplesReady)}/>
+                        <Grid container spacing={3}>
+                            <Grid item xs={12}>
+                            <strong>Using tree:</strong>
+                            <TreeForm />
+                            </Grid>
+                            <Grid item xs={12}>
+                            <strong>Number of samples per subtree:</strong> <br />
+                            <SubtreeForm />
+                            </Grid>
+                            <RunButton handleRunUsher={handleRunUsher} showLoading={!(props.latestTreeDownloaded && newSamplesReady)}/>
+                        </Grid>
                     </div>
                 </Card>
             </div>

@@ -235,7 +235,7 @@ Module.expectedDataFileDownloads++;
    "audio": 0
   } ],
   "remote_package_size": 13224870,
-  "package_uuid": "bcd29021-54d4-4b57-91c0-b6da4568bc43"
+  "package_uuid": "a78289f2-1ebe-43f8-b682-326131aeb24e"
  });
 })();
 
@@ -648,7 +648,7 @@ var wasmBinary;
 
 if (Module["wasmBinary"]) wasmBinary = Module["wasmBinary"];
 
-var noExitRuntime = Module["noExitRuntime"] || true;
+var noExitRuntime = Module["noExitRuntime"] || false;
 
 if (typeof WebAssembly !== "object") {
  abort("no native wasm support detected");
@@ -1131,6 +1131,10 @@ function preMain() {
 
 function exitRuntime() {
  if (ENVIRONMENT_IS_PTHREAD) return;
+ callRuntimeCallbacks(__ATEXIT__);
+ FS.quit();
+ TTY.shutdown();
+ PThread.runExitHandlers();
  runtimeExited = true;
 }
 
@@ -1157,7 +1161,9 @@ function addOnPreMain(cb) {
  __ATMAIN__.unshift(cb);
 }
 
-function addOnExit(cb) {}
+function addOnExit(cb) {
+ __ATEXIT__.unshift(cb);
+}
 
 function addOnPostRun(cb) {
  __ATPOSTRUN__.unshift(cb);
@@ -1341,10 +1347,10 @@ var tempDouble;
 var tempI64;
 
 var ASM_CONSTS = {
- 127412: function() {
+ 121164: function() {
   throw "Canceled!";
  },
- 127430: function($0, $1) {
+ 121182: function($0, $1) {
   setTimeout(function() {
    __emscripten_do_dispatch_to_thread($0, $1);
   }, 0);
@@ -1824,6 +1830,13 @@ function ___assert_fail(condition, filename, line, func) {
 
 function ___call_main(argc, argv) {
  var returnCode = _main(argc, argv);
+ if (!keepRuntimeAlive()) {
+  postMessage({
+   "cmd": "exitProcess",
+   "returnCode": returnCode
+  });
+  return returnCode;
+ }
 }
 
 var _emscripten_get_now;
@@ -1884,6 +1897,10 @@ function ___cxa_allocate_exception(size) {
 
 function _atexit(func, arg) {
  if (ENVIRONMENT_IS_PTHREAD) return _emscripten_proxy_to_main_thread_js(1, 1, func, arg);
+ __ATEXIT__.unshift({
+  func: func,
+  arg: arg
+ });
 }
 
 function ___cxa_atexit(a0, a1) {
@@ -5207,11 +5224,6 @@ function _gettimeofday(ptr) {
  return 0;
 }
 
-function _pthread_cleanup_pop(execute) {
- var routine = PThread.threadExitHandlers.pop();
- if (execute) routine();
-}
-
 function spawnThread(threadParams) {
  if (ENVIRONMENT_IS_PTHREAD) throw "Internal Error! spawnThread() can only ever be called from main application thread!";
  var worker = PThread.getNewWorker();
@@ -5320,80 +5332,6 @@ function _pthread_create(pthread_ptr, attr, start_routine, arg) {
   return 0;
  }
  return spawnThread(threadParams);
-}
-
-function _pthread_detach(thread) {
- if (!thread) {
-  err("pthread_detach attempted on a null thread pointer!");
-  return ERRNO_CODES.ESRCH;
- }
- var self = GROWABLE_HEAP_I32()[thread + 12 >> 2];
- if (self !== thread) {
-  err("pthread_detach attempted on thread " + thread + ", which does not point to a valid thread, or does not exist anymore!");
-  return ERRNO_CODES.ESRCH;
- }
- var wasDetached = Atomics.compareExchange(GROWABLE_HEAP_U32(), thread + 64 >> 2, 0, 2);
- return wasDetached ? ERRNO_CODES.EINVAL : 0;
-}
-
-function __pthread_testcancel_js() {
- if (!ENVIRONMENT_IS_PTHREAD) return;
- var tb = _pthread_self();
- if (!tb) return;
- var cancelDisabled = Atomics.load(GROWABLE_HEAP_U32(), tb + 56 >> 2);
- if (cancelDisabled) return;
- var canceled = Atomics.load(GROWABLE_HEAP_U32(), tb + 0 >> 2);
- if (canceled == 2) throw "Canceled!";
-}
-
-function __emscripten_do_pthread_join(thread, status, block) {
- if (!thread) {
-  err("pthread_join attempted on a null thread pointer!");
-  return ERRNO_CODES.ESRCH;
- }
- if (ENVIRONMENT_IS_PTHREAD && _pthread_self() == thread) {
-  err("PThread " + thread + " is attempting to join to itself!");
-  return ERRNO_CODES.EDEADLK;
- } else if (!ENVIRONMENT_IS_PTHREAD && _emscripten_main_browser_thread_id() == thread) {
-  err("Main thread " + thread + " is attempting to join to itself!");
-  return ERRNO_CODES.EDEADLK;
- }
- var self = GROWABLE_HEAP_I32()[thread + 12 >> 2];
- if (self !== thread) {
-  err("pthread_join attempted on thread " + thread + ", which does not point to a valid thread, or does not exist anymore!");
-  return ERRNO_CODES.ESRCH;
- }
- var detached = Atomics.load(GROWABLE_HEAP_U32(), thread + 64 >> 2);
- if (detached) {
-  err("Attempted to join thread " + thread + ", which was already detached!");
-  return ERRNO_CODES.EINVAL;
- }
- if (block) {
-  _emscripten_check_blocking_allowed();
- }
- for (;;) {
-  var threadStatus = Atomics.load(GROWABLE_HEAP_U32(), thread + 0 >> 2);
-  if (threadStatus == 1) {
-   var threadExitCode = Atomics.load(GROWABLE_HEAP_U32(), thread + 4 >> 2);
-   if (status) GROWABLE_HEAP_I32()[status >> 2] = threadExitCode;
-   Atomics.store(GROWABLE_HEAP_U32(), thread + 64 >> 2, 1);
-   if (!ENVIRONMENT_IS_PTHREAD) cleanupThread(thread); else postMessage({
-    "cmd": "cleanupThread",
-    "thread": thread
-   });
-   return 0;
-  }
-  if (!block) {
-   return ERRNO_CODES.EBUSY;
-  }
-  __pthread_testcancel_js();
-  if (!ENVIRONMENT_IS_PTHREAD) _emscripten_main_thread_process_queued_calls();
-  _emscripten_futex_wait(thread + 0, threadStatus, ENVIRONMENT_IS_PTHREAD ? 100 : 1);
- }
-}
-
-function _pthread_join(thread, status) {
- return __emscripten_do_pthread_join(thread, status, true);
 }
 
 function _setTempRet0(val) {
@@ -5834,11 +5772,7 @@ var asmLibraryArg = {
  "gettimeofday": _gettimeofday,
  "initPthreadsJS": initPthreadsJS,
  "memory": wasmMemory,
- "pthread_cleanup_pop": _pthread_cleanup_pop,
- "pthread_cleanup_push": _pthread_cleanup_push,
  "pthread_create": _pthread_create,
- "pthread_detach": _pthread_detach,
- "pthread_join": _pthread_join,
  "setTempRet0": _setTempRet0,
  "strftime_l": _strftime_l
 };
@@ -5847,6 +5781,10 @@ var asm = createWasm();
 
 var ___wasm_call_ctors = Module["___wasm_call_ctors"] = function() {
  return (___wasm_call_ctors = Module["___wasm_call_ctors"] = Module["asm"]["__wasm_call_ctors"]).apply(null, arguments);
+};
+
+var _fflush = Module["_fflush"] = function() {
+ return (_fflush = Module["_fflush"] = Module["asm"]["fflush"]).apply(null, arguments);
 };
 
 var _main = Module["_main"] = function() {
@@ -6001,9 +5939,9 @@ var dynCall_iiiiiijj = Module["dynCall_iiiiiijj"] = function() {
  return (dynCall_iiiiiijj = Module["dynCall_iiiiiijj"] = Module["asm"]["dynCall_iiiiiijj"]).apply(null, arguments);
 };
 
-var __emscripten_allow_main_runtime_queued_calls = Module["__emscripten_allow_main_runtime_queued_calls"] = 127104;
+var __emscripten_allow_main_runtime_queued_calls = Module["__emscripten_allow_main_runtime_queued_calls"] = 120856;
 
-var __emscripten_main_thread_futex = Module["__emscripten_main_thread_futex"] = 192588;
+var __emscripten_main_thread_futex = Module["__emscripten_main_thread_futex"] = 186300;
 
 Module["addRunDependency"] = addRunDependency;
 

@@ -14,6 +14,9 @@ const useStyles = makeStyles({
     maxWidth: '60%',
     margin: '0 auto'
   },
+  tableRow: {
+    fontSize: '10pt'
+  }
 });
 
 
@@ -42,7 +45,7 @@ export default function UsherResults(props) {
         <TableContainer component={Paper}>
         <Table className={classes.table} size="small" aria-label="a dense table">
             <TableHead>
-            <TableRow>
+            <TableRow className={classes.tableRow}>
                 <TableCell>Sample name</TableCell>
                 <TableCell align="right">Number of maximally parsimonious placements</TableCell>
                 <TableCell align="right">Parsimony score</TableCell>
@@ -50,7 +53,7 @@ export default function UsherResults(props) {
             </TableHead>
             <TableBody>
             {props.sampleData.map((row) => (
-                <TableRow key={row.sampleName}>
+                <TableRow classes={classes.tableRow} key={row.sampleName}>
                 <TableCell component="th" scope="row">
                     {row.sampleName}
                 </TableCell>

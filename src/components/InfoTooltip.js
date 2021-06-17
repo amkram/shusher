@@ -19,7 +19,7 @@ export default function InfoTooltip(props) {
 
   return (
     <div>
-      <Tooltip TransitionComponent={Zoom} title={<span style={{ fontSize: "12pt", lineHeight: '1.5em' }}> {props.text} </span>} className={classes.tooltip}>
+      <Tooltip TransitionComponent={Zoom} title={<span style={{ fontSize: "12pt", lineHeight: '1.2em' }}> {props.text} </span>} className={classes.tooltip}>
         <HelpOutlineIcon />
       </Tooltip>
     </div>

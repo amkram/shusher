@@ -6,20 +6,27 @@ import Grid from '@material-ui/core/Grid';
 
 export default function UsherProgress(props) {
 	return (
-		<Grid container spacing={3}>
-			<Box display="flex" alignItems="center">
-				<br />
-				UShER is running! <br />
-				Please be patient. This may take over a minute per sample.
-			</Box>
-
-			<Box width="80%" mr={1}>
-				<br/>
-				<LinearProgress variant="determinate" {...props} />
-			</Box>
-			<Box minWidth={35}>
-				<Typography variant="body2" color="textSecondary">{`${props.currentStage.message}`}</Typography>
-			</Box>
+		<div style={{ padding: '5%' }}>
+		<Grid container spacing={1}>
+			<Grid item xs={12}>
+				<Box display="flex" alignItems="center">
+					<br />
+					UShER is running! <br />
+					Please be patient. This may take over a minute per sample.
+				</Box>
+			</Grid>
+			<Grid item xs={10}>
+				<Box width="100%" mr={1}>
+					<br/>
+					<LinearProgress variant="determinate" {...props} />
+				</Box>
+			</Grid>
+			<Grid item xs={2}>
+				<Box minWidth={30}>
+					<Typography variant="body2" color="textSecondary">{`${props.currentStage.message}`}</Typography>
+				</Box>
+			</Grid>
 		</Grid>
+		</div>
 	  );
   }

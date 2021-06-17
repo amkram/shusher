@@ -18,6 +18,8 @@ import UsherResults from './UsherResults'
 import ProcessingFile from './ProcessingFile'
 import Grid from '@material-ui/core/Grid'
 import InfoTooltip from './InfoTooltip'
+import ConfirmationDialog from './ConfirmationDialog'
+import ErrorSnackbar from './ErrorSnackbar'
 
 
 const useStyles = makeStyles((theme) => ({
@@ -52,6 +54,9 @@ const useStyles = makeStyles((theme) => ({
     heading: {
         textAlign: 'center',
         paddingTop: '25px'
+    },
+    headingLeft: {
+        textAlign: 'left'
     },
     overlay: {
         position: 'relative',
@@ -91,6 +96,14 @@ const useStyles = makeStyles((theme) => ({
     },
     usherCardBottomItem: {
         marginBottom: '42px'
+    },
+    alignedDiv: {
+        textAlign: 'justify'
+    },
+    bold: {
+        backgroundColor: "inherit",
+        color: "#5c0404",
+        fontSize: "100%"
     }
   }));
 
@@ -108,20 +121,46 @@ function UsherFrame(props) {
     const [subtreeFiles, setSubtreeFiles] = React.useState([]);
     const [sampleData, setSampleData] = React.useState([]);
     const [samplesPerSubtree, setSamplesPerSubtree] = React.useState(50);
-    
+    const [started, setStarted] = React.useState(false);
+    const [showCancelUsherDialog, setShowCancelUsherDialog] = React.useState(false);
+    const [showInvalidFile, setShowInvalidFile] = React.useState(false);
+    const [showUsherError, setShowUsherError] = React.useState(false);
+    const [showInfo, setshowInfo] = React.useState(true);
+    const cancelDialogTitle = 'UShER is currently running';
+    const cancelDialogText = 'To cancel the currently running job, please reload the page.';
+    const invalidFileText = 'Unsupported file. Please upload a file with extension .fasta, .fa, or .vcf';
+    const usherErrorText = 'An error occured. Please reload the page and try again.';
 
-    const handleDelete = () => {
+    const handleDialogClose = () => {
+        setShowCancelUsherDialog(false);
+    }
+    const deleteFile = () => {
         setUploadCollapsed(false);
         setShowResults(false);
         setNewSamplesReady(false);
         setLoadedFile("");
+    }
+    const handleDelete = () => {
+        if (started) {
+            setShowCancelUsherDialog(true);
+        } else {
+            deleteFile();
+        }     
     };
+    const handleCloseInvalidFile = () => {
+        setShowInvalidFile(false);
+    }
+    const handleCloseUsherError = () => {
+        setShowUsherError(false);
+    }
+
     const handleUploadFile = (file) => {
         setProcessingFile(true);
         file.arrayBuffer().then(buf => {
             var extension = getFileType(file);
             if (!extension) {
-                console.log('Please upload a fasta or vcf file');
+                setProcessingFile(false);
+                setShowInvalidFile(true);
                 return;
             }
             window.FS.writeFile('/new_samples.' + extension, new Uint8Array(buf));
@@ -164,10 +203,12 @@ function UsherFrame(props) {
             return;
         }
         if (props.latestTreeDownloaded && newSamplesReady) {
-            var args = ['-k', samplesPerSubtree, '-i', '/latest_tree.pb.gz', '-v', '/new_samples.vcf', '-d', '/'];
+            var args = ['-k', '' + samplesPerSubtree, '-i', '/latest_tree.pb.gz', '-v', '/new_samples.vcf', '-d', '/'];
             window.callMain(args);
+            console.log(args);
             console.log('Running usher.' + samplesPerSubtree);
             setShowResults(true);
+            setStarted(true);
             setInterval(trackUsherProgress, 500);
         } else {
             console.log("Not ready yet...");
@@ -193,7 +234,7 @@ function UsherFrame(props) {
     }
     const trackUsherProgress = () => {
         var stderr = window.Module.usher_err;
-        var completed = false;
+        var completed = false;  
         if (stderr) {
             var samplesFinished = (stderr.match(/Sample name/g) || []).length;
             var error = (stderr.match(/error/g) || []).length > 0 || (stderr.match(/Error/g) || []).length > 0;
@@ -204,6 +245,8 @@ function UsherFrame(props) {
             var savingTree = (stderr.match(/Writing/g) || []).length;
             if (error) {
                 console.log("There was an error.")
+                setShowUsherError(true);
+                clearInterval(trackUsherProgress);
             }
             if (!startedSamples) {
                 setCurrentStage({id: 0, message: 'Loading global tree...'});
@@ -224,6 +267,10 @@ function UsherFrame(props) {
         <div className={classes.root}>
         <h3 className={classes.heading}>Load your data</h3>
         
+        <ConfirmationDialog onClose={handleDialogClose} title={cancelDialogTitle} text={cancelDialogText} oprn={showCancelUsherDialog}/>
+        <ErrorSnackbar text={invalidFileText} open={showInvalidFile} onClose={handleCloseInvalidFile}/>
+        <ErrorSnackbar text={usherErrorText} open={showUsherError} onClose={handleCloseUsherError}/>
+
         <Collapse in={!uploadCollapsed}>
         {processingFile ? 
             <div className={classes.wrapper}> <ProcessingFile /> </div>
@@ -243,72 +290,109 @@ function UsherFrame(props) {
 
         </Collapse>
 
-        <Fade in={uploadCollapsed}>
+        <Collapse in={uploadCollapsed}>
             <Chip 
                 className={classes.loadedFileChip}
                 onDelete={handleDelete}
                 icon={<img src="/dist/img/icon-file-light.png" width='20px'/>}
                 label={loadedFile.name + ' (' + Number(loadedFile.size / 1000000).toFixed(2) + ' MB)'}
             /> 
-        </Fade>
-        <Fade in={uploadCollapsed}>
+        </Collapse>
+        <Collapse in={uploadCollapsed}>
             <div>
                 <h3 className={classes.heading}>Place samples</h3>
                 <Card className={classes.usherCard}>
                     <div className={classes.usherCardInner}>
-                    <Grid container spacing={3}>
-                        <Grid item xs={5}>
-                                
-                                <strong>Using tree:</strong>
-                        </Grid>
-                        <Grid item xs={7} className={classes.leftAlignItem}>
-                        <Grid container spacing={1} alignItems="flex-end">
-                            <Grid item>
-                            <InfoTooltip text={
-                                'Your samples will be placed on this existing tree. Currently, the only supported option is the SARS-CoV-2 public tree, which includes publicly available sequences aggregated from GenBank, COG-UK, and the China National Center for Bioinformation'
-                            } />
-                        
-                            </Grid>
-                            <Grid item>
-                             <TreeForm className={classes.form}/>
-                            </Grid>
-                        </Grid>
-                        </Grid>
-                            
-                        <Grid item xs={5} className={classes.usherCardBottomItem}>
+                    <Grid container spacing={1}>
+                        <Grid item xs={7}>
+                            <Grid container spacing={1}>
+                                <Grid item xs={5}>
+                                        <strong>Using tree:</strong>
+                                </Grid>
+                                <Grid item xs={7} className={classes.leftAlignItem}>
+                                    <Grid container spacing={1}>
+                                        <Grid item>
+                                        <InfoTooltip text={
+                                            'Your samples will be placed on this existing tree. Currently, the only supported option is the SARS-CoV-2 public tree, which includes publicly available sequences aggregated from GenBank, COG-UK, and the China National Center for Bioinformation'
+                                        } />
+                                    
+                                        </Grid>
+                                        <Grid item>
+                                        <TreeForm className={classes.form}/>
+                                        </Grid>
+                                    </Grid>
+                                </Grid>
+                                <Grid item xs={5} className={classes.usherCardBottomItem}>
                        
-                                <strong>Number of samples per subtree:</strong> <br />
-                        </Grid>
-                        <Grid item xs={4} className={classes.leftAlignItem}>
-                        <Grid container spacing={1} alignItems="flex-end">
-                            <Grid item>
-                                <InfoTooltip text={
-                                        'After placement, you can view the subtrees of the full tree that your samples were placed on. This parameter sets the number of samples to include in each subtree.'
-                                    } />
+                                    <strong>Number of samples per subtree:</strong> <br />
+                                </Grid>
+                                <Grid item xs={7} className={classes.leftAlignItem}>
+                                    <Grid container spacing={1}>
+                                        <Grid item>
+                                            <InfoTooltip text={
+                                                    'After placement, you can view the subtrees of the full tree that your samples were placed on. This parameter sets the number of samples to include in each subtree.'
+                                                } />
+                                        </Grid>
+                                        <Grid item>
+                                            <SubtreeForm setValue={setSamplesPerSubtree} className={classes.form}/>
+                                        </Grid>
+                                </Grid>
                             </Grid>
-                            <Grid item>
-                                <SubtreeForm setValue={setSamplesPerSubtree} className={classes.form}/>
-                            </Grid>
                         </Grid>
-                            
-                        </Grid>
-                        <Grid item xs={3} className={classes.leftAlignItem}>
+                        <Grid item xs={5} className={classes.leftAlignItem}>
                             <RunButton handleRunUsher={handleRunUsher} showLoading={!(props.latestTreeDownloaded && newSamplesReady)}/>
                         </Grid>
+                            
+                        
+                            
+                        </Grid>
+                        
                     </Grid>
                     </div>
                 </Card>
             </div>
-        </Fade>
-        <Fade in={showResults}>
+        </Collapse>
+        <Collapse in={showResults}>
             <div>
                 <h3 className={classes.heading}>View Results</h3>
                 <Card className={classes.resultsCardInner}>
                     {usherCompleted ? <UsherResults sampleData={sampleData} subtreeFiles={subtreeFiles} showTreeWrapper={props.showTreeWrapper}/>
-                    : <UsherProgress value={10*currentStage.id + (currentSample/totalSamples) * (80/totalSamples)} currentStage={currentStage}/>}
+                    : <UsherProgress value={(currentSample/totalSamples) * 100} currentStage={currentStage}/>}
                 </Card>
             </div>
-        </Fade>
+        </Collapse>
+        <Collapse in={showInfo}>
+            <div class={classes.alignedDiv}>
+                <h3 className={classes.headingLeft}>What is this?</h3>
+                <p>
+                    This is a web tool that runs <a href="https://www.nature.com/articles/s41588-021-00862-7">UShER</a> on a collection of SARS-CoV-2 samples.
+                    The results can be visualized on this same page using <a href="https://docs.nextstrain.org/projects/auspice/en/stable/">Auspice</a>.
+                    It is appropriate for use with samples containing Protected Health Information (PHI). Your uploaded sequences are not transmitted over the Internet and
+                    all computation and visualization is performed locally in your web browser.
+                </p>
+                <p>
+                    Due to the performance cost incurred by running UShER in-browser, we recommend this tool be used <strong className={classes.bold}>only for samples that contain PHI</strong> or other sensitive information.
+                    For all other samples we recommend using the <a href="https://genome.ucsc.edu/cgi-bin/hgPhyloPlace">UShER online tool</a> that performs computation on UCSC servers.
+
+                    In order to enable rapid progress in SARS-CoV-2 research and genomic contact tracing, please share your SARS-CoV-2 sequences by submitting them to an INSDC member institution (NCBI, EMBL-EBI or DDBJ) and GISAID. 
+                </p>
+                
+                <h3 className={classes.headingLeft}>Why is it so slow?</h3>
+                <p>
+                   This is a port of the UShER C++ code base to JavaScript / WebAssembly, leading to a performance decrease. This tool also does not parallelize computation while the original UShER does.
+                </p>
+
+                <h3 className={classes.headingLeft}>Can I have speed and privacy?</h3>
+                <p>
+                    If you have a large number of samples that contain sensitive information, this tool may be too slow (it takes around one minute per sample).
+                    In this case, we recommend using the UShER command-line tool, which has a run time closer to one second per sample.
+                    Instructions on how to install and use the tool are available <a href="https://usher-wiki.readthedocs.io/en/latest/UShER.html">here</a>.
+                </p>
+            </div>
+        </Collapse>
+
+
+        
         
         </div>
     );

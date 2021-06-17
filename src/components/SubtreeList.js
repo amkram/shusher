@@ -18,7 +18,11 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: '#eee',
     textTransform: 'none',
     marginTop: '-8px',
-    height: '40px'
+    height: '40px',
+    fontSize: '10pt'
+  },
+  listItem: {
+    fontSize: '10pt'
   }
 }));
 
@@ -55,7 +59,7 @@ export default function SubtreeList(props) {
                 disableRipple
               />
             </ListItemIcon>
-            <ListItemText id={labelId} primary={`Subtree ${value + 1}`} />
+            <ListItemText id={labelId} className={classes.listItem} primary={`Subtree ${value + 1}`} />
           </ListItem>
         );
       })}
@@ -63,10 +67,10 @@ export default function SubtreeList(props) {
     <Button className={classes.button} variant="contained" onClick={() => props.openInAuspice(1)} component="label">
         Visualize in Auspice (Nextstrain)
     </Button>
-    <Button className={classes.button} variant="contained" component="label">
+    {/* <Button className={classes.button} variant="contained" component="label">
         Download subtree files
     </Button>
-			
+			 */}
     
     </div>
   );

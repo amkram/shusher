@@ -7,8 +7,10 @@ const useStyles = makeStyles((theme) => ({
 	button: {
 		backgroundColor: '#eee',
 		textTransform: 'none',
-		marginTop: '-8px',
-		height: '40px'
+		marginTop: '-50px',
+		marginLeft: '5px',
+		height: '40px',
+		widht: '110px'
 	},
 	usherText: {
 		textShadow: '1px 1px #aaa',

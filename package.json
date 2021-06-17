@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@material-ui/core": "^4.11.4",
+    "@material-ui/icons": "^4.11.2",
     "auspice": "2.23.0",
     "express": "^4.17.1",
     "heroku-ssl-redirect": "0.0.4",

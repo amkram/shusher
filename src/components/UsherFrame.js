@@ -17,6 +17,7 @@ import { ungzip } from 'node-gzip'
 import UsherResults from './UsherResults'
 import ProcessingFile from './ProcessingFile'
 import Grid from '@material-ui/core/Grid'
+import InfoTooltip from './InfoTooltip'
 
 
 const useStyles = makeStyles((theme) => ({
@@ -71,8 +72,8 @@ const useStyles = makeStyles((theme) => ({
     usherCard: {
         display: 'block',
         margin: '0 auto',
-        minWidth: '400px',
-        textAlign: 'left',
+        minWidth: '100%',
+        textAlign: 'right',
         paddingLeft: '30px'
     },
     usherCardInner: {
@@ -81,12 +82,15 @@ const useStyles = makeStyles((theme) => ({
         marginTop: '4vh',
         fontSize: 16
     },
-    usherCardItem: {
-        display: 'inline'
+    leftAlignItem: {
+        textAlign: 'left'
     },
     form: {
       display: 'inline',
       maxWidth: '30%'  
+    },
+    usherCardBottomItem: {
+        marginBottom: '42px'
     }
   }));
 
@@ -103,6 +107,7 @@ function UsherFrame(props) {
     const [usherCompleted, setUsherCompleted] = React.useState(false);
     const [subtreeFiles, setSubtreeFiles] = React.useState([]);
     const [sampleData, setSampleData] = React.useState([]);
+    const [samplesPerSubtree, setSamplesPerSubtree] = React.useState(50);
     
 
     const handleDelete = () => {
@@ -154,11 +159,14 @@ function UsherFrame(props) {
     const handleRunUsher = () => {
         console.log(props.latestTreeDownloaded);
         console.log(newSamplesReady);
-        
+        if (!samplesPerSubtree > 0) {
+            console.log("Samples must be > 0");
+            return;
+        }
         if (props.latestTreeDownloaded && newSamplesReady) {
-            var args = ['-k', '50', '-i', '/latest_tree.pb.gz', '-v', '/new_samples.vcf', '-d', '/'];
+            var args = ['-k', samplesPerSubtree, '-i', '/latest_tree.pb.gz', '-v', '/new_samples.vcf', '-d', '/'];
             window.callMain(args);
-            console.log('Running usher.');
+            console.log('Running usher.' + samplesPerSubtree);
             setShowResults(true);
             setInterval(trackUsherProgress, 500);
         } else {
@@ -188,11 +196,15 @@ function UsherFrame(props) {
         var completed = false;
         if (stderr) {
             var samplesFinished = (stderr.match(/Sample name/g) || []).length;
+            var error = (stderr.match(/error/g) || []).length > 0 || (stderr.match(/Error/g) || []).length > 0;
             var startedSamples = (stderr.match(/Found/g) || []).length;
             var totalSamples = startedSamples > 0 ? parseInt(stderr.split('Found ')[1].split(' missing samples.')[0]) : Infinity;
             completed = stderr.match(/Computing subtrees/g) ? (stderr.split('Computing subtrees for added')[1].match(/Completed/g) || []).length == 1: false;
             setTotalSamples(totalSamples);
             var savingTree = (stderr.match(/Writing/g) || []).length;
+            if (error) {
+                console.log("There was an error.")
+            }
             if (!startedSamples) {
                 setCurrentStage({id: 0, message: 'Loading global tree...'});
             } else if (savingTree && !completed) {
@@ -205,6 +217,7 @@ function UsherFrame(props) {
             }
         }
     }
+
     
 
     return (
@@ -244,19 +257,42 @@ function UsherFrame(props) {
                 <Card className={classes.usherCard}>
                     <div className={classes.usherCardInner}>
                     <Grid container spacing={3}>
-                        <Grid item xs={4}>
+                        <Grid item xs={5}>
+                                
                                 <strong>Using tree:</strong>
                         </Grid>
-                        <Grid item xs={4}>
+                        <Grid item xs={7} className={classes.leftAlignItem}>
+                        <Grid container spacing={1} alignItems="flex-end">
+                            <Grid item>
+                            <InfoTooltip text={
+                                'Your samples will be placed on this existing tree. Currently, the only supported option is the SARS-CoV-2 public tree, which includes publicly available sequences aggregated from GenBank, COG-UK, and the China National Center for Bioinformation'
+                            } />
+                        
+                            </Grid>
+                            <Grid item>
+                             <TreeForm className={classes.form}/>
+                            </Grid>
+                        </Grid>
+                        </Grid>
+                            
+                        <Grid item xs={5} className={classes.usherCardBottomItem}>
+                       
                                 <strong>Number of samples per subtree:</strong> <br />
                         </Grid>
-                        <Grid item xs={4}>
-                            <TreeForm className={classes.form}/>
+                        <Grid item xs={4} className={classes.leftAlignItem}>
+                        <Grid container spacing={1} alignItems="flex-end">
+                            <Grid item>
+                                <InfoTooltip text={
+                                        'After placement, you can view the subtrees of the full tree that your samples were placed on. This parameter sets the number of samples to include in each subtree.'
+                                    } />
+                            </Grid>
+                            <Grid item>
+                                <SubtreeForm setValue={setSamplesPerSubtree} className={classes.form}/>
+                            </Grid>
                         </Grid>
-                        <Grid item xs={4}>
-                            <SubtreeForm className={classes.form}/>
+                            
                         </Grid>
-                        <Grid item xs={4}>
+                        <Grid item xs={3} className={classes.leftAlignItem}>
                             <RunButton handleRunUsher={handleRunUsher} showLoading={!(props.latestTreeDownloaded && newSamplesReady)}/>
                         </Grid>
                     </Grid>

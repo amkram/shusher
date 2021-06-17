@@ -21,10 +21,13 @@ function SubtreeForm(props) {
         <TextField
           id="standard-number"
           type="number"
+		  defaultValue={50}
 		  className={classes.formControl}
           InputLabelProps={{
             shrink: true,
           }}
+		  onChange={e => props.setValue(e.target.value)}
+
         />
 	</div>
 	);

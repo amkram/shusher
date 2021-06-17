@@ -22,7 +22,7 @@ export default function UsherProgress(props) {
 				</Box>
 			</Grid>
 			<Grid item xs={2}>
-				<Box minWidth={30}>
+				<Box minWidth={30} style={{marginTop: '14px'}}>
 					<Typography variant="body2" color="textSecondary">{`${props.currentStage.message}`}</Typography>
 				</Box>
 			</Grid>

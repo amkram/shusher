@@ -16,6 +16,9 @@ const useStyles = makeStyles({
   },
   tableRow: {
     fontSize: '10pt'
+  },
+  tableCell: {
+    fontSize: '10pt'
   }
 });
 
@@ -26,12 +29,12 @@ export default function UsherResults(props) {
   const [treeVisible, setTreeVisible] = React.useState(false);
   
   const openInAuspice = (subtreeNum) => {
+    subtreeNum += 1;
     console.log('Opening subtree ' + subtreeNum + ' in auspice.');
     var filename = 'subtree-' + subtreeNum + '.nh';
     if (!treeVisible) {
-            console.log('showing tree.');
+            console.log('showing tree.' + filename);
 						props.showTreeWrapper(filename);
-            console.log('here');
             setTreeVisible(true);
 		}
   }
@@ -40,25 +43,25 @@ export default function UsherResults(props) {
     <div>
         <h3 className={classes.heading}>View your samples on subtrees</h3>
         Your samples were placed on {props.subtreeFiles.length} unique subtrees.
-        <SubtreeList openInAuspice={openInAuspice}/>
+        <SubtreeList numSubtrees={props.subtreeFiles.length} openInAuspice={openInAuspice}/>
         <h3 className={classes.heading}>Uploaded sample information</h3>
         <TableContainer component={Paper}>
         <Table className={classes.table} size="small" aria-label="a dense table">
             <TableHead>
             <TableRow className={classes.tableRow}>
-                <TableCell>Sample name</TableCell>
-                <TableCell align="right">Number of maximally parsimonious placements</TableCell>
-                <TableCell align="right">Parsimony score</TableCell>
+                <TableCell className={classes.tableCell}>Sample name</TableCell>
+                <TableCell className={classes.tableCell} align="right">Number of maximally parsimonious placements</TableCell>
+                <TableCell className={classes.tableCell} align="right">Parsimony score</TableCell>
             </TableRow>
             </TableHead>
             <TableBody>
             {props.sampleData.map((row) => (
                 <TableRow classes={classes.tableRow} key={row.sampleName}>
-                <TableCell component="th" scope="row">
+                <TableCell className={classes.tableCell} component="th" scope="row">
                     {row.sampleName}
                 </TableCell>
-                <TableCell align="right">{row.numPlacements}</TableCell>
-                <TableCell align="right">{row.parsimonyScore}</TableCell>
+                <TableCell className={classes.tableCell} align="right">{row.numPlacements}</TableCell>
+                <TableCell className={classes.tableCell} align="right">{row.parsimonyScore}</TableCell>
                 </TableRow>
             ))}
             </TableBody>

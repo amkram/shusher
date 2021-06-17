@@ -104,7 +104,7 @@ const useStyles = makeStyles((theme) => ({
         backgroundColor: "inherit",
         color: "#5c0404",
         fontSize: "100%"
-    }
+    },
   }));
 
 function UsherFrame(props) {
@@ -253,6 +253,7 @@ function UsherFrame(props) {
             } else if (savingTree && !completed) {
                 setCurrentStage({id: 2, message: 'Finishing up...'});
             } else if (completed) {
+                setCurrentSample({id: 3, message: 'Done!'});
                 handleCompleted(stderr, totalSamples);
             } else {
                 setCurrentSample(samplesFinished);
@@ -303,13 +304,11 @@ function UsherFrame(props) {
                 <h3 className={classes.heading}>Place samples</h3>
                 <Card className={classes.usherCard}>
                     <div className={classes.usherCardInner}>
-                    <Grid container spacing={1}>
-                        <Grid item xs={7}>
-                            <Grid container spacing={1}>
+                    <Grid container spacing={1}>                            
                                 <Grid item xs={5}>
                                         <strong>Using tree:</strong>
                                 </Grid>
-                                <Grid item xs={7} className={classes.leftAlignItem}>
+                                <Grid item xs={4} className={classes.leftAlignItem}>
                                     <Grid container spacing={1}>
                                         <Grid item>
                                         <InfoTooltip text={
@@ -322,11 +321,14 @@ function UsherFrame(props) {
                                         </Grid>
                                     </Grid>
                                 </Grid>
+                                <Grid item xs={3} className={classes.leftAlignItem}>
+                                    <RunButton handleRunUsher={handleRunUsher} showLoading={!(props.latestTreeDownloaded && newSamplesReady)}/>
+                                </Grid>
                                 <Grid item xs={5} className={classes.usherCardBottomItem}>
                        
                                     <strong>Number of samples per subtree:</strong> <br />
                                 </Grid>
-                                <Grid item xs={7} className={classes.leftAlignItem}>
+                                <Grid item xs={4} className={classes.leftAlignItem}>
                                     <Grid container spacing={1}>
                                         <Grid item>
                                             <InfoTooltip text={
@@ -336,12 +338,8 @@ function UsherFrame(props) {
                                         <Grid item>
                                             <SubtreeForm setValue={setSamplesPerSubtree} className={classes.form}/>
                                         </Grid>
-                                </Grid>
-                            </Grid>
                         </Grid>
-                        <Grid item xs={5} className={classes.leftAlignItem}>
-                            <RunButton handleRunUsher={handleRunUsher} showLoading={!(props.latestTreeDownloaded && newSamplesReady)}/>
-                        </Grid>
+                        
                             
                         
                             
@@ -357,7 +355,7 @@ function UsherFrame(props) {
                 <h3 className={classes.heading}>View Results</h3>
                 <Card className={classes.resultsCardInner}>
                     {usherCompleted ? <UsherResults sampleData={sampleData} subtreeFiles={subtreeFiles} showTreeWrapper={props.showTreeWrapper}/>
-                    : <UsherProgress value={(currentSample/totalSamples) * 100} currentStage={currentStage}/>}
+                    : <UsherProgress value={(Math.min( (currentSample+1)/totalSamples) * 100), 100)} currentStage={currentStage}/>}
                 </Card>
             </div>
         </Collapse>

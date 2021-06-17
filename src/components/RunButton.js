@@ -7,10 +7,9 @@ const useStyles = makeStyles((theme) => ({
 	button: {
 		backgroundColor: '#eee',
 		textTransform: 'none',
-		marginTop: '-50px',
-		marginLeft: '5px',
 		height: '40px',
-		widht: '110px'
+		width: '110px',
+		top: '12px'
 	},
 	usherText: {
 		textShadow: '1px 1px #aaa',
@@ -28,7 +27,7 @@ function RunButton(props) {
 			<Button className={classes.button}
 				variant="contained" component="label" onClick={props.handleRunUsher}>
 				{ props.showLoading 
-					?  <CircularProgress size={'65%'}/>
+					?  <CircularProgress size={'35%'}/>
 					:  <span>Run&nbsp;<span className={classes.usherText}>UShER</span></span>
 				}
 			</Button>

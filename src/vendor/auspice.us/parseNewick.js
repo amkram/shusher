@@ -99,8 +99,7 @@ export const parseNewick = (nwk) => {
   
   function makeDescription(name) {
     return `
-  Dataset generated from the newick file "${name}"
-  dragged onto [auspice.us](http://auspice.us) on
+  Dataset generated on
   ${(new Date()).toLocaleDateString('en-EN', {month: "short", weekday: "short", day: "2-digit", year: "numeric"})}.
   If you have metadata you wish to display, you can now drag on a CSV file and it will be added into this view,
   [see here](https://nextstrain.github.io/auspice/advanced-functionality/drag-drop-csv-tsv) for more info.

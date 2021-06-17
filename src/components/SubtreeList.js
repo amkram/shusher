@@ -22,7 +22,7 @@ const useStyles = makeStyles((theme) => ({
     fontSize: '10pt'
   },
   listItem: {
-    fontSize: '10pt'
+    fontSize: '12pt',
   }
 }));
 
@@ -46,9 +46,8 @@ export default function SubtreeList(props) {
   return (
     <div>
     <List className={classes.root}>
-      {[0, 1, 2, 3].map((value) => {
+      {[...Array(props.numSubtrees).keys()].map((value) => {
         const labelId = `checkbox-list-label-${value}`;
-
         return (
           <ListItem key={value} role={undefined} dense button onClick={handleToggle(value)}>
             <ListItemIcon>
@@ -59,12 +58,12 @@ export default function SubtreeList(props) {
                 disableRipple
               />
             </ListItemIcon>
-            <ListItemText id={labelId} className={classes.listItem} primary={`Subtree ${value + 1}`} />
+            <ListItemText disableTypography id={labelId} className={classes.listItem} primary={`Subtree ${value + 1}`} />
           </ListItem>
         );
       })}
     </List>
-    <Button className={classes.button} variant="contained" onClick={() => props.openInAuspice(1)} component="label">
+    <Button className={classes.button} variant="contained" onClick={() => props.openInAuspice(checked[0])} component="label">
         Visualize in Auspice (Nextstrain)
     </Button>
     {/* <Button className={classes.button} variant="contained" component="label">

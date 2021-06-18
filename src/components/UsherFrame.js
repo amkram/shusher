@@ -368,13 +368,15 @@ function UsherFrame(props) {
                     It is appropriate for use with samples containing Protected Health Information (PHI). Your uploaded sequences are not transmitted over the Internet and
                     all computation and visualization is performed locally in your web browser.
                 </p>
+                <h3 className={classes.headingLeft}>Should I use this?</h3>
                 <p>
-                    Due to the performance cost incurred by running UShER in-browser, we recommend this tool be used <strong className={classes.bold}>only for samples that contain PHI</strong> or other sensitive information.
-                    For all other samples we recommend using the <a href="https://genome.ucsc.edu/cgi-bin/hgPhyloPlace">UShER online tool</a> that performs computation on UCSC servers.
-
-                    In order to enable rapid progress in SARS-CoV-2 research and genomic contact tracing, please share your SARS-CoV-2 sequences by submitting them to an INSDC member institution (NCBI, EMBL-EBI or DDBJ) and GISAID. 
+                    Only if your samples contain sensitive data. We strongly encourage you to share your SARS-CoV-2 sequences with the public. 
+                    Sharing sequence data enables rapid progress in SARS-CoV-2 research and genomic contact tracing.
                 </p>
-                
+                <p>
+                    For most use cases, we recommend using the <a href="https://genome.ucsc.edu/cgi-bin/hgPhyloPlace">UShER online tool</a> that performs computation on UCSC servers.
+                    This web tool is intended to be used <strong className={classes.bold}>only for samples that contain PHI</strong> or other sensitive information.
+                </p>
                 <h3 className={classes.headingLeft}>Why is it so slow?</h3>
                 <p>
                    This is a port of the UShER C++ code base to JavaScript / WebAssembly, leading to a performance decrease. This tool also does not parallelize computation while the original UShER does.

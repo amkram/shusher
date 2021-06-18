@@ -10,6 +10,9 @@ doesn't officially expose these functions */
 
 export const showTree = (dispatch, file) => {
 
+  const backToUsher = () => {
+    dispatch({type: "PAGE_CHANGE", displayComponent: "splash"});
+  }
   const fileReader = new window.FileReader();
   fileReader.onloadstart = () => {
     console.log(`Reading file ${file.name}`);
@@ -28,6 +31,7 @@ export const showTree = (dispatch, file) => {
       } else {
         throw new Error("Parser for this file type not (yet) implemented");
       }
+      console.log(JSON.stringify(json));
       state = createStateFromQueryOrJSONs({json: json, query: {}});
     } catch (err) {
       return dispatch(errorNotification({

@@ -1,3 +1,6 @@
+// Adapted from auspice.us
+// https://github.com/nextstrain/auspice.us
+
 import React from "react";
 import styled from 'styled-components';
 
@@ -17,15 +20,14 @@ const Title = styled.a`
   font-size: 20px;
   font-weight: 400;
   cursor: pointer;
-  letter-spacing: 1rem;
 `;
 
 const AuspiceNavBar = ({narrativeTitle, sidebar}) => {
   if (!sidebar) return null;
   return (
     <NavBarContainer>
-      <Title href="/">
-        {"Return to UShER"}
+      <Title href="" onClick={backToUsher}>
+        {"Return to UShER results"}
       </Title>
     </NavBarContainer>
   );

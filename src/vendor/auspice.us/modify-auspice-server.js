@@ -1,4 +1,4 @@
-// From auspice.us
+// Adapted from auspice.us
 // https://github.com/nextstrain/auspice.us
 
 /**

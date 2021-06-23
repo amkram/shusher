@@ -3,16 +3,12 @@
 
 import { createStateFromQueryOrJSONs } from "auspice/src/actions/recomputeReduxState";
 import { errorNotification } from "auspice/src/actions/notifications";
-import newickToAuspiceJson from "../../vendor/auspice.us/parseNewick";
+import { newickToAuspiceJson } from "../../vendor/auspice.us/parseNewick";
 
 /* The following requires knowledge of how auspice works, is undocumented, and is liable to change since auspice
 doesn't officially expose these functions */
 
-export const showTree = (dispatch, file) => {
-
-  const backToUsher = () => {
-    dispatch({type: "PAGE_CHANGE", displayComponent: "splash"});
-  }
+export const showTree = (dispatch, file, userSamples) => {
   const fileReader = new window.FileReader();
   fileReader.onloadstart = () => {
     console.log(`Reading file ${file.name}`);
@@ -22,12 +18,15 @@ export const showTree = (dispatch, file) => {
     try {
       let json;
       const fileName = file.name.toLowerCase();
+      console.log(fileName);
       if (fileName.endsWith("json")) {
         console.log("Parsing file as Auspice v2 JSON");
         json = JSON.parse(event.target.result);
       } else if (fileName.endsWith("nh")) {
         console.log("Parsing file as a newick tree with branch lengths of divergence");
-        json = newickToAuspiceJson(file.name, event.target.result);
+        console.log('hello');
+        console.log(file.name + ' ' + event.target.result + ' ' + userSamples);
+        json = newickToAuspiceJson(file.name, event.target.result, userSamples);
       } else {
         throw new Error("Parser for this file type not (yet) implemented");
       }
@@ -35,7 +34,7 @@ export const showTree = (dispatch, file) => {
       state = createStateFromQueryOrJSONs({json: json, query: {}});
     } catch (err) {
       return dispatch(errorNotification({
-        message: `attempted to read this file but failed!`
+        message: `attempted to read this file but failed!` + err
       }));
     }
 

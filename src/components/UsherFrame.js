@@ -360,7 +360,7 @@ function UsherFrame(props) {
             </div>
         </Collapse>
         <Collapse in={showInfo}>
-            <div class={classes.alignedDiv}>
+            <div className={classes.alignedDiv}>
                 <h3 className={classes.headingLeft}>What is this?</h3>
                 <p>
                     This is a web tool that runs <a href="https://www.nature.com/articles/s41588-021-00862-7">UShER</a> on a collection of SARS-CoV-2 samples.

@@ -34,7 +34,9 @@ export default function UsherResults(props) {
     var filename = 'subtree-' + subtreeNum + '.nh';
     if (!treeVisible) {
             console.log('showing tree.' + filename);
-						props.showTreeWrapper(filename);
+            const userSamples = props.sampleData.map(s => s.sampleName);
+            console.log(userSamples)
+						props.showTreeWrapper(filename, userSamples);
             setTreeVisible(true);
 		}
   }

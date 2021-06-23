@@ -19,7 +19,8 @@
     "heroku-ssl-redirect": "0.0.4",
     "lodash": "^4.17.21",
     "node-gzip": "^1.1.2",
-    "react-file-drop": "^3.1.2"
+    "react-file-drop": "^3.1.2",
+    "react-redux": "^7.2.4"
   },
   "devDependencies": {}
 }

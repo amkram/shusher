@@ -2,7 +2,9 @@
 // https://github.com/nextstrain/auspice.us
 
 import React from "react";
+import { connect } from "react-redux";
 import styled from 'styled-components';
+import BackToUsher from '../components/BackToUsher';
 
 const NavBarContainer = styled.div`
   display: flex;
@@ -22,15 +24,22 @@ const Title = styled.a`
   cursor: pointer;
 `;
 
-const AuspiceNavBar = ({narrativeTitle, sidebar}) => {
-  if (!sidebar) return null;
-  return (
-    <NavBarContainer>
-      <Title href="" onClick={backToUsher}>
-        {"Return to UShER results"}
-      </Title>
-    </NavBarContainer>
-  );
-};
+const goBack = () => {
+  console.log('going back')
+  this.props.dispatch({type: "PAGE_CHANGE", displayComponent: "splash"});
+}
 
-export default AuspiceNavBar;
+const AuspiceNavBar = ({narrativeTitle, sidebar}) => {
+  return (
+  <p>Hello</p>
+  )
+  // if (!sidebar) return null;
+  // return (
+  //    <NavBarContainer>
+  //      <BackToUsher backToUsher={goBack}/>
+  //    </NavBarContainer>
+  // );
+}
+
+
+export default connect()(AuspiceNavBar);

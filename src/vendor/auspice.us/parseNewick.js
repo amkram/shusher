@@ -1,3 +1,4 @@
+
 /**
  * Newick format parser in JavaScript.
  *
@@ -15,12 +16,15 @@
  */
 
 /* NOTE: parseNewick function slightly modified to produce an object better suited for Nextstrain. */
+/* further modified for use with UShER (add color metadata) */
 
-export const parseNewick = (nwk) => {
+const parseNewick = (nwk, userSamples) => {
+    console.log('here02')
     const ancestors = [];
     let tree = {};
     const tokens = nwk.split(/\s*(;|\(|\)|,|:)\s*/);
     for (let i=0; i<tokens.length; i++) {
+      console.log(i)
       const token = tokens[i];
       const subtree = {};
       switch (token) {
@@ -44,6 +48,13 @@ export const parseNewick = (nwk) => {
             tree.name = token;
           } else if (x === ':') {
             tree.node_attrs = {div: parseFloat(token)};
+            if (userSamples.includes(tree.name)) {
+              console.log('here')
+              tree.node_attrs.type = {value: "Your samples"};
+            } else {
+              tree.node_attrs.type = {value: "Existing samples"};
+              console.log('here2')
+            }
           }
       }
     }
@@ -51,8 +62,9 @@ export const parseNewick = (nwk) => {
   };
   
   
-  const getTreeStruct = (nwk) => {
-    const tree = parseNewick(nwk);
+  const getTreeStruct = (nwk, userSamples) => {
+    console.log('here01')
+    const tree = parseNewick(nwk, userSamples);
   
     /* recursively create missing node names */
     let count = 10000;
@@ -84,15 +96,38 @@ export const parseNewick = (nwk) => {
    * @param {string} nwk newick string
    * @returns {object} auspice JSON
    */
-  const newickToAuspiceJson = (name, nwk) => {
+  export const newickToAuspiceJson = (name, nwk, userSamples) => {
+    console.log('here0')
     const json = {
       version: "2.0",
       meta: {
         title: name,
         panels: ["tree"],
-        description: makeDescription(name)
+        description: makeDescription(name),
+        colorings: [
+          {
+              "key": "type",
+              "title": "Sample category",
+              "type": "categorical",
+              "scale": [
+                  [
+                    "Your samples",
+                    "#3d74ff"
+                  ],
+                  [
+                      "Existing samples",
+                      "#e3e3e3"
+                  ]
+              ]
+                
+          }
+      ],
+      filters: [
+          "type"
+      ]
       },
-      tree: getTreeStruct(nwk)
+      
+      tree: getTreeStruct(nwk, userSamples)
     };
     return json;
   };
@@ -105,5 +140,3 @@ export const parseNewick = (nwk) => {
   [see here](https://nextstrain.github.io/auspice/advanced-functionality/drag-drop-csv-tsv) for more info.
   `
   }
-  
-  export default newickToAuspiceJson;

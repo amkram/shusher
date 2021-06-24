@@ -19,12 +19,10 @@
 /* further modified for use with UShER (add color metadata) */
 
 const parseNewick = (nwk, userSamples) => {
-    console.log('here02')
     const ancestors = [];
     let tree = {};
     const tokens = nwk.split(/\s*(;|\(|\)|,|:)\s*/);
     for (let i=0; i<tokens.length; i++) {
-      console.log(i)
       const token = tokens[i];
       const subtree = {};
       switch (token) {
@@ -49,11 +47,9 @@ const parseNewick = (nwk, userSamples) => {
           } else if (x === ':') {
             tree.node_attrs = {div: parseFloat(token)};
             if (userSamples.includes(tree.name)) {
-              console.log('here')
               tree.node_attrs.type = {value: "Your samples"};
             } else {
               tree.node_attrs.type = {value: "Existing samples"};
-              console.log('here2')
             }
           }
       }
@@ -63,7 +59,6 @@ const parseNewick = (nwk, userSamples) => {
   
   
   const getTreeStruct = (nwk, userSamples) => {
-    console.log('here01')
     const tree = parseNewick(nwk, userSamples);
   
     /* recursively create missing node names */
@@ -97,7 +92,6 @@ const parseNewick = (nwk, userSamples) => {
    * @returns {object} auspice JSON
    */
   export const newickToAuspiceJson = (name, nwk, userSamples) => {
-    console.log('here0')
     const json = {
       version: "2.0",
       meta: {

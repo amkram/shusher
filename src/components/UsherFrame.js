@@ -13,6 +13,7 @@ import UsherProgress from './UsherProgress'
 import { getFileType } from '../tools/files/fileHandling'
 import { fastaToVcf } from '../tools/alignment/fastaToVcf'
 import { referenceGenomeUrl } from '../data/constants'
+import { getTreeJson } from '../tools/auspice/showTree'
 import { ungzip } from 'node-gzip'
 import UsherResults from './UsherResults'
 import ProcessingFile from './ProcessingFile'
@@ -20,7 +21,6 @@ import Grid from '@material-ui/core/Grid'
 import InfoTooltip from './InfoTooltip'
 import ConfirmationDialog from './ConfirmationDialog'
 import ErrorSnackbar from './ErrorSnackbar'
-
 
 const useStyles = makeStyles((theme) => ({
     root: {
@@ -126,7 +126,7 @@ function UsherFrame(props) {
     const [showInvalidFile, setShowInvalidFile] = React.useState(false);
     const [showUsherError, setShowUsherError] = React.useState(false);
     const [showInfo, setshowInfo] = React.useState(true);
-    const cancelDialogTitle = 'UShER is currently running';
+    const cancelDialogTitle = 'UShER is running';
     const cancelDialogText = 'To cancel the currently running job, please reload the page.';
     const invalidFileText = 'Unsupported file. Please upload a file with extension .fasta, .fa, or .vcf';
     const usherErrorText = 'An error occured. Please reload the page and try again.';
@@ -142,6 +142,7 @@ function UsherFrame(props) {
     }
     const handleDelete = () => {
         if (started) {
+            console.log('already started')
             setShowCancelUsherDialog(true);
         } else {
             deleteFile();
@@ -196,8 +197,11 @@ function UsherFrame(props) {
         handleUploadFile(event.dataTransfer.files[0]);
     }
     const handleRunUsher = () => {
-        console.log(props.latestTreeDownloaded);
-        console.log(newSamplesReady);
+        if (started) {
+            console.log('already started')
+            setShowCancelUsherDialog(true);
+            return;
+        }
         if (!samplesPerSubtree > 0) {
             console.log("Samples must be > 0");
             return;
@@ -218,19 +222,41 @@ function UsherFrame(props) {
         return { sampleName, numPlacements, parsimonyScore };
     }
     const handleCompleted = (stderr, totalSamples) => {
-        setUsherCompleted(true);
-        var sampleData = [];
-        var subtreeFiles = stderr.match(/subtree-.*nh/g);
-        setSubtreeFiles(subtreeFiles);
-        var stderrLines = stderr.match(/Sample name:.*\n/g);
-        for (var i = 0; i < totalSamples; i++) {
-            var currLine = stderrLines[i];
-            var name = currLine.split('\t')[0].split(': ')[1];
-            var score = parseInt(currLine.split('score: ')[1].split('\t')[0]);
-            var nplace = parseInt(currLine.split('placements: ')[1].split('\n')[0]);
-            sampleData.push(createData(name, nplace, score));
+        if (!usherCompleted) {
+            console.log(usherCompleted);
+            setUsherCompleted(true);
+            var sampleData = [];
+            var subtreeFiles = stderr.match(/subtree-.*nh/g);
+            setSubtreeFiles(subtreeFiles);
+            var stderrLines = stderr.match(/Sample name:.*\n/g);
+            for (var i = 0; i < totalSamples; i++) {
+                var currLine = stderrLines[i];
+                var name = currLine.split('\t')[0].split(': ')[1];
+                var score = parseInt(currLine.split('score: ')[1].split('\t')[0]);
+                var nplace = parseInt(currLine.split('placements: ')[1].split('\n')[0]);
+                sampleData.push(createData(name, nplace, score));
+            }
+            setSampleData(sampleData);
+            const userSamples = sampleData.map(s => s.sampleName);
+
+            // save jsons of the trees to be accessed by auspice
+            var file;
+            var jsons = [];
+            var json;
+            for (var i = 0; i < subtreeFiles.length; i++) {
+                file = new File([window.FS.readFile('/' + subtreeFiles[i], {encoding: 'utf8'})], subtreeFiles[i], { type: "text/plain"});
+                json = getTreeJson(file, userSamples, i);
+                console.log('received ' + json);
+                jsons.push(JSON.stringify(json));
+            }
+
+            // this can be accessed by other tabs
+            console.log(jsons);
+            window.localStorage.setItem('window0', JSON.stringify(jsons));
+
+            console.log('done saving tree jsons');
         }
-        setSampleData(sampleData);
+
     }
     const trackUsherProgress = () => {
         var stderr = window.Module.usher_err;
@@ -254,7 +280,9 @@ function UsherFrame(props) {
                 setCurrentStage({id: 2, message: 'Finishing up...'});
             } else if (completed) {
                 setCurrentSample({id: 3, message: 'Done!'});
+                clearInterval(trackUsherProgress);
                 handleCompleted(stderr, totalSamples);
+                
             } else {
                 setCurrentSample(samplesFinished);
                 setCurrentStage({id: 1, message: 'Placing sample ' + (samplesFinished*1+1) + '/' + totalSamples + '...'});
@@ -262,13 +290,12 @@ function UsherFrame(props) {
         }
     }
 
-    
 
     return (
         <div className={classes.root}>
         <h3 className={classes.heading}>Load your data</h3>
         
-        <ConfirmationDialog onClose={handleDialogClose} title={cancelDialogTitle} text={cancelDialogText} oprn={showCancelUsherDialog}/>
+        <ConfirmationDialog onClose={handleDialogClose} title={cancelDialogTitle} text={cancelDialogText} open={showCancelUsherDialog}/>
         <ErrorSnackbar text={invalidFileText} open={showInvalidFile} onClose={handleCloseInvalidFile}/>
         <ErrorSnackbar text={usherErrorText} open={showUsherError} onClose={handleCloseUsherError}/>
 
@@ -353,18 +380,20 @@ function UsherFrame(props) {
         <Collapse in={showResults}>
             <div>
                 <h3 className={classes.heading}>View Results</h3>
-                <Card className={classes.resultsCardInner}>
-                    {usherCompleted ? <UsherResults sampleData={sampleData} subtreeFiles={subtreeFiles} showTreeWrapper={props.showTreeWrapper}/>
-                    : <UsherProgress value={ Math.min( (currentSample+1)/totalSamples * 100, 100)} currentStage={currentStage}/>}
-                </Card>
+                 <Card className={classes.resultsCardInner}>
+                        {usherCompleted ? <UsherResults sampleData={sampleData} subtreeFiles={subtreeFiles}/>
+                            : <UsherProgress value={ Math.min( (currentSample+1)/totalSamples * 100, 100)} currentStage={currentStage}/>}
+                 </Card>
+                
+
             </div>
         </Collapse>
         <Collapse in={showInfo}>
             <div className={classes.alignedDiv}>
                 <h3 className={classes.headingLeft}>What is this?</h3>
                 <p>
-                    This is a web tool that runs <a href="https://www.nature.com/articles/s41588-021-00862-7">UShER</a> on a collection of SARS-CoV-2 samples.
-                    The results can be visualized on this same page using <a href="https://docs.nextstrain.org/projects/auspice/en/stable/">Auspice</a>.
+                    This is a web tool that runs <a target="_blank" href="https://www.nature.com/articles/s41588-021-00862-7">UShER</a> on a collection of SARS-CoV-2 samples.
+                    The results can be visualized on this same page using <a target="_blank" href="https://docs.nextstrain.org/projects/auspice/en/stable/">Auspice</a>.
                     It is appropriate for use with samples containing Protected Health Information (PHI). Your uploaded sequences are not transmitted over the Internet and
                     all computation and visualization is performed locally in your web browser.
                 </p>
@@ -374,8 +403,16 @@ function UsherFrame(props) {
                     Sharing sequence data enables rapid progress in SARS-CoV-2 research and genomic contact tracing.
                 </p>
                 <p>
-                    For most use cases, we recommend using the <a href="https://genome.ucsc.edu/cgi-bin/hgPhyloPlace">UShER online tool</a> that performs computation on UCSC servers.
+                    For most use cases, we recommend using the <a target="_blank" href="https://genome.ucsc.edu/cgi-bin/hgPhyloPlace">UShER online tool</a> that performs computation on UCSC servers.
                     This web tool is intended to be used <strong className={classes.bold}>only for samples that contain PHI</strong> or other sensitive information.
+                </p>
+                <h3 className={classes.headingLeft}>How can I share my sequences?</h3>
+                <p>
+                    Please submit your sequences to an <a target="_blank" href="">INSDC</a> member institution (<a target="_blank" href="https://submit.ncbi.nlm.nih.gov/sarscov2/">NCBI</a>,<a target="_blank" href="https://www.covid19dataportal.org/submit-data">EMBL-EBI</a>, 
+                        or <a target="_blank" href="https://www.ddbj.nig.ac.jp/ddbj/web-submission.html">DDBJ</a>) and <a target="_blank" href="https://www.gisaid.org/">GISAID</a>.
+                </p>
+                <p>
+                    You may find <a target="_blank" href="https://github.com/maximilianh/multiSub">multiSub</a> helpful in preparing submissions for multiple institutions at a time.
                 </p>
                 <h3 className={classes.headingLeft}>Why is it so slow?</h3>
                 <p>
@@ -386,7 +423,7 @@ function UsherFrame(props) {
                 <p>
                     If you have a large number of samples that contain sensitive information, this tool may be too slow (it takes around one minute per sample).
                     In this case, we recommend using the UShER command-line tool, which has a run time closer to one second per sample.
-                    Instructions on how to install and use the tool are available <a href="https://usher-wiki.readthedocs.io/en/latest/UShER.html">here</a>.
+                    Instructions on how to install and use the tool are available <a target="_blank" href="https://usher-wiki.readthedocs.io/en/latest/UShER.html">here</a>.
                 </p>
             </div>
         </Collapse>

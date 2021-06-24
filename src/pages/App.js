@@ -7,7 +7,7 @@ import { latestTreeUrl } from '../data/constants'
 import { fastaToVcf } from '../tools/alignment/fastaToVcf'
 import { createStateFromQueryOrJSONs } from "auspice/src/actions/recomputeReduxState";
 import { errorNotification } from "auspice/src/actions/notifications";
-
+import { showTreeFromJson } from '../tools/auspice/showTree';
 
 import '../styles/global.css'
 
@@ -49,25 +49,33 @@ class App extends React.Component {
 		this.state = {
 			usherLoaded: false,
 			treeVisible: false,
-			latestTreeDownloaded: false
+			latestTreeDownloaded: false,
 		};
-		this.showTreeWrapper = this.showTreeWrapper.bind(this);
 	}
 	
-	showTreeWrapper(filename, userSamples) {
-		console.log("showTreeWrapper in App.js");
-		var file = new File([window.FS.readFile('/' + filename, {encoding: 'utf8'})],
-						filename, { type: "text/plain"});
-		showTree(this.props.dispatch, file, userSamples);
-	}
 
-	testAlign() {
-		fastaToVcf();
-	}
+	// listenForBack() {
+	// 	if (window.goBack) {
+	// 		console.log('back button received in App.js')
+	// 		window.goBack = false;
+	// 		window.returned = true;
+	// 		this.props.dispatch({type: "PAGE_CHANGE", displayComponent: "splash", pushState: true});
+	// 	}
+	// }
 	
 	componentDidMount() {
-		if (!this.state.usherLoaded) {
-	
+		if (location.href.split('subtree/').length == 2) {
+			// the current page should display a subtree in auspice
+			var loadSubtreeNum = parseInt(location.href.split('subtree/')[1]);
+			var loadedJson = JSON.parse(window.localStorage.getItem('window0'))[loadSubtreeNum];
+			console.log('loading previously stored json subtree #' + loadSubtreeNum);
+			console.log(loadedJson);
+			showTreeFromJson(loadedJson);
+			console.log('done showing tree')
+		}
+		else if (!this.state.usherLoaded) {
+			// the current page should load usher
+
 			// Load the UShER Emscripten bundle and global JS
 			const beforeJS = document.createElement('script');
 			const usherJS = document.createElement('script');
@@ -86,6 +94,8 @@ class App extends React.Component {
 			afterJS.onload = () => { 
 				console.log("Usher JS loaded.");
 				this.setState({usherLoaded: true});
+
+				
 				var mimeType = 'application/octet-stream';
 				window.saveFileFromUrl('/latest_tree.pb.gz', latestTreeUrl, mimeType)
 					.then(() => {
@@ -102,12 +112,6 @@ class App extends React.Component {
 						  message: `attempted to read this file but failed!` + err
 						}));
 					  }
-				  
-				// Load the (parsed) tree data into redux store
-				this.props.dispatch({type: "CLEAN_START", ...state});
-				console.log("issue page change")
-				this.props.dispatch({type: "PAGE_CHANGE", displayComponent: "main"});
-
 			}
 
 			// Prevent loading file in browser upon drag-and-drop
@@ -115,10 +119,12 @@ class App extends React.Component {
 				e = e || event;
 				e.preventDefault();
 			  },false);
-			  window.addEventListener("drop",function(e){
+			window.addEventListener("drop",function(e){
 				e = e || event;
 				e.preventDefault();
 			  },false);
+			
+			window.setInterval(this.listenForBack, 100);
 		}				
 	}
 	
@@ -130,7 +136,12 @@ class App extends React.Component {
 				<div className="logo">
 					<img className={classes.logoImg} src="/dist/img/logo.png" alt="UShER logo"/>
 					<Box className={classes.usherBox}>
-						<UsherFrame latestTreeDownloaded={this.state.latestTreeDownloaded} showTreeWrapper={this.showTreeWrapper}/>
+						<UsherFrame returned={this.state.returned} 
+							recoveredSampleData={this.state.recoveredSampleData}
+							recoveredSubtreeFiles={this.state.recoveredSubtreeFiles}
+							recoveredLoadedFile={this.state.recoveredLoadedFile}
+							latestTreeDownloaded={this.state.latestTreeDownloaded} 
+						/>
 					</Box>
 				</div>
 			</div>

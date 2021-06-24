@@ -30,16 +30,19 @@ export default function UsherResults(props) {
   
   const openInAuspice = (subtreeNum) => {
     subtreeNum += 1;
+    
     console.log('Opening subtree ' + subtreeNum + ' in auspice.');
-    var filename = 'subtree-' + subtreeNum + '.nh';
-    if (!treeVisible) {
-            console.log('showing tree.' + filename);
-            const userSamples = props.sampleData.map(s => s.sampleName);
-            console.log(userSamples)
-						props.showTreeWrapper(filename, userSamples);
-            setTreeVisible(true);
-		}
-  }
+    window.open('subtree/1', '_blank').focus();
+    //save tree here
+//    var filename = 'subtree-' + subtreeNum + '.nh';
+//     if (!treeVisible) {
+//             console.log('showing tree.' + filename);
+// //            const userSamples = props.sampleData.map(s => s.sampleName);
+// //            console.log(userSamples)
+// 						props.showTreeWrapper(filename, userSamples);
+//             setTreeVisible(true);
+	}
+  
   
   return (
     <div>

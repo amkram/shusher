@@ -26,3 +26,4 @@ window.callMain = callMain;
 window.Module = Module;
 window.usher_err = '';
 window.usher_output = '';
+window.goBack = false;

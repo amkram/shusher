@@ -222,11 +222,13 @@ function UsherFrame(props) {
         return { sampleName, numPlacements, parsimonyScore };
     }
     const handleCompleted = (stderr, totalSamples) => {
-        if (!usherCompleted) {
+        if (!window.usherCompleted) {
             console.log(usherCompleted);
             setUsherCompleted(true);
+            window.usherCompleted = true;
             var sampleData = [];
             var subtreeFiles = stderr.match(/subtree-.*nh/g);
+            console.log(subtreeFiles);
             setSubtreeFiles(subtreeFiles);
             var stderrLines = stderr.match(/Sample name:.*\n/g);
             for (var i = 0; i < totalSamples; i++) {
@@ -238,29 +240,34 @@ function UsherFrame(props) {
             }
             setSampleData(sampleData);
             const userSamples = sampleData.map(s => s.sampleName);
+            console.log(userSamples);
 
             // save jsons of the trees to be accessed by auspice
             var file;
+            var fileText;
             var jsons = [];
             var json;
             for (var i = 0; i < subtreeFiles.length; i++) {
-                file = new File([window.FS.readFile('/' + subtreeFiles[i], {encoding: 'utf8'})], subtreeFiles[i], { type: "text/plain"});
-                json = getTreeJson(file, userSamples, i);
-                console.log('received ' + json);
-                jsons.push(JSON.stringify(json));
+                fileText = window.FS.readFile('/' + subtreeFiles[i], {encoding: 'utf8'});
+                json = getTreeJson(fileText, userSamples, 'subtree ' + i);
+                jsons.push(json);
             }
 
             // this can be accessed by other tabs
-            console.log(jsons);
-            window.localStorage.setItem('window0', JSON.stringify(jsons));
-
-            console.log('done saving tree jsons');
+            var windowId = 'usher_' + window.localStorage.length;
+            window.localStorage.setItem(windowId, JSON.stringify(jsons));
+            window.id = windowId;
         }
 
     }
     const trackUsherProgress = () => {
         var stderr = window.Module.usher_err;
         var completed = false;  
+
+        // stderr = 
+        // 'Loading existing mutation-annotated tree object from file /latest_tree.pb.gz\nCompleted in 7383 msec\nCurrent tree size (#nodes): 672544	Sample name: NC_045512.2	Parsimony score: 0	Number of parsimony-optimal placements: 4\nCompleted in 9113 msec\nCompleted in 2610 msec\nCompleted in 2 msec \nCompleted in 1 msec\nComputing subtrees for added samples.\nComputing subtrees for 1 samples.\nWriting subtree 1 to file//subtree-1.nh\nWriting list of mutations at the nodes of subtree 1 to file\nCompleted in 446956 msec';
+        // handleCompleted(stderr, 1);
+
         if (stderr) {
             var samplesFinished = (stderr.match(/Sample name/g) || []).length;
             var error = (stderr.match(/error/g) || []).length > 0 || (stderr.match(/Error/g) || []).length > 0;

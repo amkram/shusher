@@ -54,6 +54,7 @@ export const showTreeFromFile = (dispatch, file, userSamples) => {
 
 // Displays an auspice tree given a json string
 export const showTreeFromJson = (dispatch, json) => {
+  let state;
   console.log('showing tree from json')
   try {
     state = createStateFromQueryOrJSONs({json: json, query: {}});
@@ -62,7 +63,7 @@ export const showTreeFromJson = (dispatch, json) => {
       message: `attempted to read this file but failed!` + err
     }));
   }
-
+  console.log('sending page change')
   // Load the (parsed) tree data into redux store
   dispatch({type: "CLEAN_START", ...state});
   // Load the "main" page, otherwise we'll always be seeing the splash page!
@@ -71,29 +72,13 @@ export const showTreeFromJson = (dispatch, json) => {
 }
 
 // Converts a file to auspice json and returns it
-export const getTreeJson = (file, userSamples, num) => {
-  var fileText = FS.readFile('/' + file.name, {encoding: 'utf8'});
-  console.log(fileText);
- // const fileReader = new window.FileReader();
-  
- // fileReader.onload = function(e) {
-    let state;
+export const getTreeJson = (newickText, userSamples, fileName) => {
     try {
       var json;
-      const fileName = file.name.toLowerCase();
-      console.log(fileName);
-      if (fileName.endsWith("json")) {
-        console.log("Parsing file as Auspice v2 JSON");
-        json = JSON.parse(fileText);
-      } else if (fileName.endsWith("nh")) {
-        console.log("Parsing file as a newick tree with branch lengths of divergence");
-        json = newickToAuspiceJson(file.name, fileText, userSamples);
-        console.log(json);
-        return json;
-  
-      } else {
-        throw new Error("Parser for this file type not (yet) implemented");
-      }
+      console.log("Parsing file as a newick tree with branch lengths of divergence");
+      json = newickToAuspiceJson(fileName, newickText, userSamples);
+      console.log(json);
+      return json;
     } catch (err) {
       console.log(err);
       return err;

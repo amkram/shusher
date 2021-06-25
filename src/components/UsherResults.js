@@ -28,11 +28,14 @@ export default function UsherResults(props) {
   const classes = useStyles();
   const [treeVisible, setTreeVisible] = React.useState(false);
   
-  const openInAuspice = (subtreeNum) => {
-    subtreeNum += 1;
-    
-    console.log('Opening subtree ' + subtreeNum + ' in auspice.');
-    window.open('subtree/1', '_blank').focus();
+  const openInAuspice = (subtreeNums) => {
+    for (var i = 0; i < subtreeNums.length; i++) {
+      if (i == subtreeNums.length - 1) {
+        window.open('subtree/' + window.id + '/' + subtreeNums[i], '_blank').focus();
+      } else {
+        window.open('subtree/' + window.id + '/' + subtreeNum[i], '_blank');
+      }
+    }
     //save tree here
 //    var filename = 'subtree-' + subtreeNum + '.nh';
 //     if (!treeVisible) {

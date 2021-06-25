@@ -3,7 +3,6 @@
 
 import React from "react";
 import styled from 'styled-components';
-import BackToUsher from '../components/BackToUsher';
 
 const NavBarContainer = styled.div`
   display: flex;
@@ -23,18 +22,9 @@ const Title = styled.a`
   cursor: pointer;
 `;
 
-const goBack = () => {
-  console.log('going back')
-//  window.goBack = true;
-}
-
 const AuspiceNavBar = ({narrativeTitle, sidebar}) => {
   if (!sidebar) return null;
-  return (
-     <NavBarContainer>
-       <BackToUsher backToUsher={goBack}/>
-     </NavBarContainer>
-  );
+  return ('');
 }
 
 

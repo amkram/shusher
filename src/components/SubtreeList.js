@@ -63,7 +63,7 @@ export default function SubtreeList(props) {
         );
       })}
     </List>
-    <Button className={classes.button} variant="contained" onClick={() => props.openInAuspice(checked[0])} component="label">
+    <Button className={classes.button} variant="contained" onClick={() => props.openInAuspice(checked)} component="label">
         Visualize in Auspice (Nextstrain)
     </Button>
     {/* <Button className={classes.button} variant="contained" component="label">

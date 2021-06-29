@@ -1,11 +1,5 @@
 html,
 body {
- text-align: center;
- margin: 0;
- font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Helvetica Neue',
-   sans-serif;
- -webkit-font-smoothing: antialiased;
- -moz-osx-font-smoothing: grayscale;
  background-color: #f5f7f1;
 }
 

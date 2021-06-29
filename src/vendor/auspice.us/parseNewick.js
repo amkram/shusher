@@ -106,7 +106,7 @@ const parseNewick = (nwk, userSamples) => {
               "scale": [
                   [
                     "Your samples",
-                    "#3d74ff"
+                    "#eb4034"
                   ],
                   [
                       "Existing samples",

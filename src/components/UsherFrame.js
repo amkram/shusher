@@ -21,6 +21,7 @@ import Grid from '@material-ui/core/Grid'
 import InfoTooltip from './InfoTooltip'
 import ConfirmationDialog from './ConfirmationDialog'
 import ErrorSnackbar from './ErrorSnackbar'
+import Button from '@material-ui/core/Button'
 
 const useStyles = makeStyles((theme) => ({
     root: {
@@ -30,7 +31,7 @@ const useStyles = makeStyles((theme) => ({
 
     },
     wrapper: {
-        height: '180px',  
+        height: '210px',  
         boxShadow: '0px 0px 4px 1px #ddd inset',
         borderRadius: '6px',
         backgroundColor: '#fafafa',
@@ -60,7 +61,7 @@ const useStyles = makeStyles((theme) => ({
     },
     overlay: {
         position: 'relative',
-        top: '-180px',        
+        top: '-210px',        
         textAlign: 'center',
         
     },
@@ -105,6 +106,9 @@ const useStyles = makeStyles((theme) => ({
         color: "#5c0404",
         fontSize: "100%"
     },
+    smallText: {
+        fontSize: '10pt'
+    }
   }));
 
 function UsherFrame(props) {
@@ -126,6 +130,7 @@ function UsherFrame(props) {
     const [showInvalidFile, setShowInvalidFile] = React.useState(false);
     const [showUsherError, setShowUsherError] = React.useState(false);
     const [showInfo, setshowInfo] = React.useState(true);
+    const [useExample, setUseExample] = React.useState(false);
     const cancelDialogTitle = 'UShER is running';
     const cancelDialogText = 'To cancel the currently running job, please reload the page.';
     const invalidFileText = 'Unsupported file. Please upload a file with extension .fasta, .fa, or .vcf';
@@ -193,6 +198,17 @@ function UsherFrame(props) {
             
         });
     }
+    const handleUseExample = () => {
+        console.log('using example')
+        setProcessingFile(true);
+        setUploadCollapsed(true);
+        var file = {name: 'example1_typical_use_case.fasta', size: 10000}
+        setLoadedFile(file);
+        setUseExample(true);
+        setNewSamplesReady(true);
+        setProcessingFile(false);
+
+    }
     const handleDropFile = (event) => {
         handleUploadFile(event.dataTransfer.files[0]);
     }
@@ -207,7 +223,13 @@ function UsherFrame(props) {
             return;
         }
         if (props.latestTreeDownloaded && newSamplesReady) {
-            var args = ['-k', '' + samplesPerSubtree, '-i', '/latest_tree.pb.gz', '-v', '/new_samples.vcf', '-d', '/'];
+            var sampleFileName;
+            if (useExample) {
+                sampleFileName = '/preload/test_samples.vcf';
+            } else {
+                sampleFileName = '/new_samples.vcf';
+            }
+            var args = ['-k', '' + samplesPerSubtree, '-i', '/latest_tree.pb.gz', '-v', sampleFileName, '-d', '/'];
             window.callMain(args);
             console.log(args);
             console.log('Running usher.' + samplesPerSubtree);
@@ -238,20 +260,27 @@ function UsherFrame(props) {
                 var nplace = parseInt(currLine.split('placements: ')[1].split('\n')[0]);
                 sampleData.push(createData(name, nplace, score));
             }
-            setSampleData(sampleData);
             const userSamples = sampleData.map(s => s.sampleName);
-            console.log(userSamples);
-
+            
             // save jsons of the trees to be accessed by auspice
             var file;
             var fileText;
             var jsons = [];
             var json;
+            var currSample;
             for (var i = 0; i < subtreeFiles.length; i++) {
                 fileText = window.FS.readFile('/' + subtreeFiles[i], {encoding: 'utf8'});
                 json = getTreeJson(fileText, userSamples, 'subtree ' + i);
                 jsons.push(json);
+                for (var j = 0; j < totalSamples; j++) {
+                    currSample = sampleData[j];
+                    if (JSON.stringify(json).includes(currSample.sampleName)) {
+                        sampleData[j].subtree = i+1;
+                    }
+                }
             }
+
+            setSampleData(sampleData);
 
             // this can be accessed by other tabs
             var windowId = 'usher_' + window.localStorage.length;
@@ -319,7 +348,14 @@ function UsherFrame(props) {
                 <div className={classes.overlay}>
                     <p>Drag a FASTA or VCF file here</p>
                     <img src="/dist/img/icon-file-light.png" className={classes.fileIcon}/>
-                    <p>or&nbsp; <FileUploadButton callback={handleUploadFile}/> </p>
+                    <p>or&nbsp; <FileUploadButton callback={handleUploadFile}/></p>
+                    <p className={classes.smallText}>No data? Try
+                        <Button color="#5c0404" onClick={handleUseExample}>
+                            an example
+                        </Button>
+                        (<a target="_blank" href="https://raw.githubusercontent.com/russcd/USHER_DEMO/master/example1_typical_use_case.fasta">
+                            view file</a>)
+                         </p><br/>
                 </div>
             </div>}
 
@@ -413,9 +449,12 @@ function UsherFrame(props) {
                     For most use cases, we recommend using the <a target="_blank" href="https://genome.ucsc.edu/cgi-bin/hgPhyloPlace">UShER online tool</a> that performs computation on UCSC servers.
                     This web tool is intended to be used <strong className={classes.bold}>only for samples that contain PHI</strong> or other sensitive information.
                 </p>
+                <p>
+                    If you are interested in clade or mutation annotations, check out <a target="_blank" href="https://clades.nextstrain.org/">Nextclade</a> or use the <a target="_blank" href="https://genome.ucsc.edu/cgi-bin/hgPhyloPlace">UShER online tool</a>.
+                </p>
                 <h3 className={classes.headingLeft}>How can I share my sequences?</h3>
                 <p>
-                    Please submit your sequences to an <a target="_blank" href="">INSDC</a> member institution (<a target="_blank" href="https://submit.ncbi.nlm.nih.gov/sarscov2/">NCBI</a>,<a target="_blank" href="https://www.covid19dataportal.org/submit-data">EMBL-EBI</a>, 
+                    Please submit your sequences to an <a target="_blank" href="">INSDC</a> member institution (<a target="_blank" href="https://submit.ncbi.nlm.nih.gov/sarscov2/">NCBI</a>, <a target="_blank" href="https://www.covid19dataportal.org/submit-data">EMBL-EBI</a>, 
                         or <a target="_blank" href="https://www.ddbj.nig.ac.jp/ddbj/web-submission.html">DDBJ</a>) and <a target="_blank" href="https://www.gisaid.org/">GISAID</a>.
                 </p>
                 <p>

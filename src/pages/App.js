@@ -19,6 +19,7 @@ const styles = theme => ({
 		fontFamily: 'Inter, Helvetica, sans-serif',
 		fontSize: 16,
 		backgroundColor: '#f5f7f1'
+		
 	},
 	wrapper: {
 		width: '100%',
@@ -64,7 +65,7 @@ class App extends React.Component {
 			var split = location.href.split('subtree/')[1].split('/')
 			// handles the case the user has multiple usher tabs open
 			var originatingWindow = split[0];
-			var loadSubtreeNum = parseInt(split[1]);
+			var loadSubtreeNum = parseInt(split[1])-1;
 			var loadedJson = JSON.parse(window.localStorage.getItem(originatingWindow))[loadSubtreeNum];
 			console.log('loading previously stored subtree #' + loadSubtreeNum);
 			console.log(loadedJson);
@@ -113,6 +114,10 @@ class App extends React.Component {
 
 			window.addEventListener('beforeunload', this.confirmClosePage);
 			window.addEventListener('unload', this.handleClosePage);
+			window.onerror = function(error, url, line) {
+				console.log('error:')
+				console.log(error)
+			};
 			
 		}				
 	}

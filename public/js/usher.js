@@ -231,11 +231,11 @@ Module.expectedDataFileDownloads++;
   }, {
    "filename": "/preload/test_samples.vcf",
    "start": 13219946,
-   "end": 13224870,
+   "end": 13220876,
    "audio": 0
   } ],
-  "remote_package_size": 13224870,
-  "package_uuid": "a78289f2-1ebe-43f8-b682-326131aeb24e"
+  "remote_package_size": 13220876,
+  "package_uuid": "88dc88cc-3c16-42f2-b300-5bc511fc683b"
  });
 })();
 
@@ -1347,10 +1347,10 @@ var tempDouble;
 var tempI64;
 
 var ASM_CONSTS = {
- 121164: function() {
+ 116620: function() {
   throw "Canceled!";
  },
- 121182: function($0, $1) {
+ 116638: function($0, $1) {
   setTimeout(function() {
    __emscripten_do_dispatch_to_thread($0, $1);
   }, 0);
@@ -5939,9 +5939,9 @@ var dynCall_iiiiiijj = Module["dynCall_iiiiiijj"] = function() {
  return (dynCall_iiiiiijj = Module["dynCall_iiiiiijj"] = Module["asm"]["dynCall_iiiiiijj"]).apply(null, arguments);
 };
 
-var __emscripten_allow_main_runtime_queued_calls = Module["__emscripten_allow_main_runtime_queued_calls"] = 120856;
+var __emscripten_allow_main_runtime_queued_calls = Module["__emscripten_allow_main_runtime_queued_calls"] = 116312;
 
-var __emscripten_main_thread_futex = Module["__emscripten_main_thread_futex"] = 186300;
+var __emscripten_main_thread_futex = Module["__emscripten_main_thread_futex"] = 181756;
 
 Module["addRunDependency"] = addRunDependency;
 

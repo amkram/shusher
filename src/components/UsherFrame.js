@@ -435,9 +435,14 @@ function UsherFrame(props) {
             <div className={classes.alignedDiv}>
                 <h3 className={classes.headingLeft}>What is this?</h3>
                 <p>
-                    This is a web tool that runs <a target="_blank" href="https://www.nature.com/articles/s41588-021-00862-7">UShER</a> on a collection of SARS-CoV-2 samples.
-                    The results can be visualized on this same page using <a target="_blank" href="https://docs.nextstrain.org/projects/auspice/en/stable/">Auspice</a>.
-                    It is appropriate for use with samples containing Protected Health Information (PHI). Your uploaded sequences are not transmitted over the Internet and
+                    This is a web tool that uses <a target="_blank" href="https://www.nature.com/articles/s41588-021-00862-7">UShER</a> to place user-provided SARS-CoV-2 sequences on a continuously growing global tree of samples.
+                    The <a href="https://hgwdev.gi.ucsc.edu/~angie/UShER_SARS-CoV-2/">global tree</a> is regularly updated and is comprised of publicly available sequences from <a href="https://www.ncbi.nlm.nih.gov/genbank/">GenBank</a>, <a href="https://www.cogconsortium.uk/">COG-UK</a>,
+                     and <a href="https://bigd.big.ac.cn/ncov/">China National Center for Bioinformation</a>. Read more about the public tree on <a href="https://www.biorxiv.org/content/10.1101/2021.04.03.438321v1.full">bioRxiv</a>.
+                </p>
+                <p>
+                    After placement, subtrees containing your samples can be visualized using <a target="_blank" href="https://docs.nextstrain.org/projects/auspice/en/stable/">Auspice</a>.
+                </p> 
+                <p>It is appropriate for use with samples containing Protected Health Information (PHI). Your uploaded sequences are not transmitted over the Internet and
                     all computation and visualization is performed locally in your web browser.
                 </p>
                 <h3 className={classes.headingLeft}>Should I use this?</h3>
@@ -454,7 +459,7 @@ function UsherFrame(props) {
                 </p>
                 <h3 className={classes.headingLeft}>How can I share my sequences?</h3>
                 <p>
-                    Please submit your sequences to an <a target="_blank" href="">INSDC</a> member institution (<a target="_blank" href="https://submit.ncbi.nlm.nih.gov/sarscov2/">NCBI</a>, <a target="_blank" href="https://www.covid19dataportal.org/submit-data">EMBL-EBI</a>, 
+                    Please submit your sequences to an <a target="_blank" href="https://ncbiinsights.ncbi.nlm.nih.gov/2020/08/17/insdc-covid-data-sharing/">INSDC</a> member institution (<a target="_blank" href="https://submit.ncbi.nlm.nih.gov/sarscov2/">NCBI</a>, <a target="_blank" href="https://www.covid19dataportal.org/submit-data">EMBL-EBI</a>, 
                         or <a target="_blank" href="https://www.ddbj.nig.ac.jp/ddbj/web-submission.html">DDBJ</a>) and <a target="_blank" href="https://www.gisaid.org/">GISAID</a>.
                 </p>
                 <p>
@@ -471,6 +476,7 @@ function UsherFrame(props) {
                     In this case, we recommend using the UShER command-line tool, which has a run time closer to one second per sample.
                     Instructions on how to install and use the tool are available <a target="_blank" href="https://usher-wiki.readthedocs.io/en/latest/UShER.html">here</a>.
                 </p>
+                <h3 className={classes.headingLeft}></h3>
             </div>
         </Collapse>
 

@@ -127,14 +127,16 @@ function UsherFrame(props) {
     const [samplesPerSubtree, setSamplesPerSubtree] = React.useState(50);
     const [started, setStarted] = React.useState(false);
     const [showCancelUsherDialog, setShowCancelUsherDialog] = React.useState(false);
-    const [showInvalidFile, setShowInvalidFile] = React.useState(false);
-    const [showUsherError, setShowUsherError] = React.useState(false);
     const [showInfo, setshowInfo] = React.useState(true);
     const [useExample, setUseExample] = React.useState(false);
+
     const cancelDialogTitle = 'UShER is running';
     const cancelDialogText = 'To cancel the currently running job, please reload the page.';
     const invalidFileText = 'Unsupported file. Please upload a file with extension .fasta, .fa, or .vcf';
     const usherErrorText = 'An error occured. Please reload the page and try again.';
+
+    const [errorMessage, setErrorMessage] = React.useState(''); 
+    const [showError, setShowError] = React.useState(false);
 
     const handleDialogClose = () => {
         setShowCancelUsherDialog(false);
@@ -153,20 +155,19 @@ function UsherFrame(props) {
             deleteFile();
         }     
     };
-    const handleCloseInvalidFile = () => {
-        setShowInvalidFile(false);
-    }
-    const handleCloseUsherError = () => {
-        setShowUsherError(false);
+    const handleCloseError = () => {
+        setShowError(false);
     }
 
     const handleUploadFile = (file) => {
         setProcessingFile(true);
         file.arrayBuffer().then(buf => {
             var extension = getFileType(file);
+            var converted;
             if (!extension) {
                 setProcessingFile(false);
-                setShowInvalidFile(true);
+                setErrorMessage(invalidFileText);
+                setShowError(true);
                 return;
             }
             window.FS.writeFile('/new_samples.' + extension, new Uint8Array(buf));
@@ -181,7 +182,13 @@ function UsherFrame(props) {
                     console.log('unzipping...');
                     FS.writeFile('/reference.fasta', decompressed);
                     console.log('converting to vcf...');
-                    fastaToVcf('/new_samples.fasta', '/new_samples.vcf');
+                    converted = fastaToVcf('/new_samples.fasta', '/new_samples.vcf');
+                    if(converted !== true){
+                        setErrorMessage(converted.message);
+                        setShowError(true);
+                        setProcessingFile(false);
+                        return;
+                    }
                     console.log('done.');
                     setLoadedFile(file);
                     setNewSamplesReady(true);
@@ -307,7 +314,8 @@ function UsherFrame(props) {
             var savingTree = (stderr.match(/Writing/g) || []).length;
             if (error) {
                 console.log("There was an error.")
-                setShowUsherError(true);
+                setErrorMessage(usherErrorText);
+                setShowError(true);
                 clearInterval(trackUsherProgress);
             }
             if (!startedSamples) {
@@ -332,8 +340,7 @@ function UsherFrame(props) {
         <h3 className={classes.heading}>Load your data</h3>
         
         <ConfirmationDialog onClose={handleDialogClose} title={cancelDialogTitle} text={cancelDialogText} open={showCancelUsherDialog}/>
-        <ErrorSnackbar text={invalidFileText} open={showInvalidFile} onClose={handleCloseInvalidFile}/>
-        <ErrorSnackbar text={usherErrorText} open={showUsherError} onClose={handleCloseUsherError}/>
+        <ErrorSnackbar text={errorMessage} open={showError} onClose={handleCloseError}/>
 
         <Collapse in={!uploadCollapsed}>
         {processingFile ? 
@@ -465,18 +472,28 @@ function UsherFrame(props) {
                 <p>
                     You may find <a target="_blank" href="https://github.com/maximilianh/multiSub">multiSub</a> helpful in preparing submissions for multiple institutions at a time.
                 </p>
-                <h3 className={classes.headingLeft}>Why is it so slow?</h3>
+                <h3 className={classes.headingLeft}>Why is it slower than command-line UShER?</h3>
                 <p>
-                   This is a port of the UShER C++ code base to JavaScript / WebAssembly, leading to a performance decrease. This tool also does not parallelize computation while the original UShER does.
-                </p>
-
-                <h3 className={classes.headingLeft}>Can I have speed and privacy?</h3>
-                <p>
-                    If you have a large number of samples that contain sensitive information, this tool may be too slow (it takes around one minute per sample).
-                    In this case, we recommend using the UShER command-line tool, which has a run time closer to one second per sample.
+                   This is a port of the UShER C++ code base to JavaScript / WebAssembly, leading to some performance decrease. This tool also does not parallelize computation while the original UShER does.
+                    If you have a large number of samples that contain sensitive information, we recommend using the UShER command-line tool.
                     Instructions on how to install and use the tool are available <a target="_blank" href="https://usher-wiki.readthedocs.io/en/latest/UShER.html">here</a>.
                 </p>
-                <h3 className={classes.headingLeft}></h3>
+                <h3 className={classes.headingLeft}>Acknowledgements</h3>
+                <p>
+                    This app uses or adapts code from several open-source projects. We are grateful for their contributions.
+                </p>
+                <p>
+                    Pairwise sequence alignment uses the implementation from <a target="_blank" href="https://github.com/nextstrain/nextclade">Nextclade</a>.
+                    <br/><br/>
+                    Visualization of subtrees is performed with <a target="_blank" href="https://github.com/nextstrain/auspice/blob/5132a1c1d063761eb02dc5434a8316c6d5be7085/docs/index.rst">Auspice</a>.
+                    <br/><br/>
+                    Scripts to modify the Auspice server are from <a target="_blank" href="https://github.com/nextstrain/auspice.us">auspice.us</a>.
+                    <br/><br/>
+                    Nextclade, Auspice, and auspice.us are part of the <a target="_blank" href="https://github.com/nextstrain">Nextstrain</a> project.
+                    <br/><br/>
+                    Sample placement is done using a ported version of <a target="_blank" href="https://github.com/yatisht/usher">UShER</a>.
+                </p>
+                
             </div>
         </Collapse>
 

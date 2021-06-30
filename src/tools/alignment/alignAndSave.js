@@ -7,8 +7,14 @@ export function alignAndSave(names, sequences, reference, vcfFilename) {
 
     // align every sample to the reference
     var alignments = [];
+    var alignment;
     for (var sampleNum=0; sampleNum < numSamples; sampleNum++) {
-        alignments.push(alignPairwise(sequences[sampleNum], reference, 0));
+        try {
+            alignment = alignPairwise(sequences[sampleNum], reference, 0);
+        } catch (error) {
+            return error;
+        }
+        alignments.push(alignment);
         console.log(alignments[sampleNum]);
         headerString += '\t' + names[sampleNum];
     }
@@ -52,6 +58,8 @@ export function alignAndSave(names, sequences, reference, vcfFilename) {
 
     }
     saveVcf(snps, reference, headerString, names);
+
+    return true;
 }       
 
 function getAlignmentPos(alignedReference, referencePos) {

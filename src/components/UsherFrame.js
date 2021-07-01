@@ -443,7 +443,7 @@ function UsherFrame(props) {
                 <h3 className={classes.headingLeft}>What is this?</h3>
                 <p>
                     This is a web tool that uses <a target="_blank" href="https://www.nature.com/articles/s41588-021-00862-7">UShER</a> to place user-provided SARS-CoV-2 sequences on a continuously growing global tree of samples.
-                    The <a target="_blank" href="https://hgwdev.gi.ucsc.edu/~angie/UShER_SARS-CoV-2/">global tree</a> is regularly updated and is comprised of publicly available sequences from <a target="_blank" href="https://www.ncbi.nlm.nih.gov/genbank/">GenBank</a>, <a target="_blank" href="https://www.cogconsortium.uk/">COG-UK</a>,
+                    The <a target="_blank" href="https://hgdownload.soe.ucsc.edu/goldenPath/wuhCor1/UShER_SARS-CoV-2/">global tree</a> is regularly updated and is comprised of publicly available sequences from <a target="_blank" href="https://www.ncbi.nlm.nih.gov/genbank/">GenBank</a>, <a target="_blank" href="https://www.cogconsortium.uk/">COG-UK</a>,
                      and <a target="_blank" href="https://bigd.big.ac.cn/ncov/">China National Center for Bioinformation</a>. Read more about the public tree on <a target="_blank" href="https://www.biorxiv.org/content/10.1101/2021.04.03.438321v1.full">bioRxiv</a>.
                 </p>
                 <p>

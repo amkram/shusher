@@ -4,7 +4,8 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 export default function ProcessingFile(props) {
 	return (
 	  <div>
-          Processing uploaded file... <br/>
+          Processing file... <br/>
+	(your data will not leave your computer) <br/>
 			<CircularProgress />
 	  </div>
 	);

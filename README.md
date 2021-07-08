@@ -1,1 +1,0 @@
-This is a web app hosting a version of UShER suitable for analysis of sensitive data. User data is not transmitted over the Internet and computation on the data is performed entirely client-side in the web browser.

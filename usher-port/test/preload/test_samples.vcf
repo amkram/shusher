@@ -1,0 +1,18 @@
+##fileformat=VCFv4.2
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	hypothetical_uploaded_sequence_1	hypothetical_uploaded_sequence_2	hypothetical_uploaded_sequence_3	hypothetical_uploaded_sequence_4	hypothetical_uploaded_sequence_5
+NC_045512v2	241	.	C	T	.	.	.	GT	1	1	1	1	1
+NC_045512v2	1059	.	C	T	.	.	.	GT	1	1	1	0	0
+NC_045512v2	1980	.	G	A	.	.	.	GT	1	1	1	0	0
+NC_045512v2	3037	.	C	T	.	.	.	GT	1	1	1	1	1
+NC_045512v2	8167	.	T	A	.	.	.	GT	1	1	1	0	0
+NC_045512v2	13753	.	A	T	.	.	.	GT	0	0	0	0	1
+NC_045512v2	14408	.	C	T	.	.	.	GT	1	1	1	1	1
+NC_045512v2	15187	.	A	G	.	.	.	GT	0	1	1	0	0
+NC_045512v2	18877	.	C	T	.	.	.	GT	0	0	0	1	1
+NC_045512v2	20541	.	A	T	.	.	.	GT	0	0	0	0	1
+NC_045512v2	22346	.	G	A	.	.	.	GT	1	1	1	0	0
+NC_045512v2	23403	.	A	G	.	.	.	GT	1	1	1	1	1
+NC_045512v2	25563	.	G	T	.	.	.	GT	1	1	1	1	1
+NC_045512v2	27964	.	C	T	.	.	.	GT	1	1	1	0	0
+NC_045512v2	29322	.	T	A	.	.	.	GT	0	0	0	1	1
+NC_045512v2	29353	.	C	T	.	.	.	GT	1	1	1	0	0

@@ -277,7 +277,7 @@ function UsherFrame(props) {
             var currSample;
             for (var i = 0; i < subtreeFiles.length; i++) {
                 fileText = window.FS.readFile('/' + subtreeFiles[i], {encoding: 'utf8'});
-                json = getTreeJson(fileText, userSamples, 'subtree ' + i);
+                json = getTreeJson(fileText, userSamples, 'subtree ' + (i+1));
                 jsons.push(json);
                 for (var j = 0; j < totalSamples; j++) {
                     currSample = sampleData[j];
@@ -300,9 +300,6 @@ function UsherFrame(props) {
         var stderr = window.Module.usher_err;
         var completed = false;  
 
-        // stderr = 
-        // 'Loading existing mutation-annotated tree object from file /latest_tree.pb.gz\nCompleted in 7383 msec\nCurrent tree size (#nodes): 672544	Sample name: NC_045512.2	Parsimony score: 0	Number of parsimony-optimal placements: 4\nCompleted in 9113 msec\nCompleted in 2610 msec\nCompleted in 2 msec \nCompleted in 1 msec\nComputing subtrees for added samples.\nComputing subtrees for 1 samples.\nWriting subtree 1 to file//subtree-1.nh\nWriting list of mutations at the nodes of subtree 1 to file\nCompleted in 446956 msec';
-        // handleCompleted(stderr, 1);
 
         if (stderr) {
             var samplesFinished = (stderr.match(/Sample name/g) || []).length;
@@ -462,7 +459,7 @@ function UsherFrame(props) {
                     This web tool is intended to be used <strong className={classes.bold}>only for samples that contain PHI</strong> or other sensitive information.
                 </p>
                 <p>
-                    If you are interested in clade or mutation annotations, check out <a target="_blank" href="https://clades.nextstrain.org/">Nextclade</a> or use the <a target="_blank" href="https://genome.ucsc.edu/cgi-bin/hgPhyloPlace">UShER online tool</a>.
+                    If you are interested in clade or mutation annotations, check out <a href="https://pangolin.cog-uk.io/">Pangolin</a>, <a target="_blank" href="https://clades.nextstrain.org/">Nextclade</a>, or  the <a target="_blank" href="https://genome.ucsc.edu/cgi-bin/hgPhyloPlace">UShER online tool</a>.
                 </p>
                 <h3 className={classes.headingLeft}>How can I share my sequences?</h3>
                 <p>

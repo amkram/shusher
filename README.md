@@ -104,7 +104,7 @@ Enter the `web-app` subdirectory and run
 
 To build the app, run
 
-  `npm build`
+  `npm run build`
   
 And to start the local server, run
 

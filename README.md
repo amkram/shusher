@@ -2,17 +2,16 @@
   <img src="web-app/public/img/logo.png" height=100/>
 </div>
 <div align="center">
-  <strong>private (Shh :shushing_face:) Ultrafast Sample placement on Existing tRees</strong>
+  private (<strong>Sh</strong>h :shushing_face:) <strong>U</strong>ltrafast <strong>S</strong>ample placement on <strong>E</strong>xisting t<strong>R</strong>ees</strong>
 </div>
 <div align="center">
-  Private, browser-based placement of genome sequences on phylogenetic trees using <a href="https://github.com/yatisht/usher">UShER</a>.
-<br />
 <br />
 
-  | :computer_mouse:	Access shUShER <a href="">here</a>! |
+  | :computer_mouse:	Access ShUShER <a href="">here</a>! |
 | --- |
 </div>
 <div align="center">
+    ShUShER is a browser tool for placing sensitive genome sequences on phylogenetic trees using <a href="https://github.com/yatisht/usher">UShER</a>.
   <h3>
     <a href="#usage">
       Usage
@@ -36,7 +35,7 @@
 
 
 ## Usage
-> :warning:	This tool is intended to be used only for sequences that cannot be shared publicly. If you do not have this requirement, please use the [UShER web tool](https://genome.ucsc.edu/cgi-bin/hgPhyloPlace) and submit your sequences to an INSDC member institution (NCBI, EMBL-EBI, or DDBJ) and GISAID
+> :warning:	This tool is intended to be used <strong>only for sequences that cannot be shared publicly</strong>. If you do not have this requirement, please use the [UShER web tool](https://genome.ucsc.edu/cgi-bin/hgPhyloPlace) and submit your sequences to an INSDC member institution (NCBI, EMBL-EBI, or DDBJ) and GISAID
 
 ## How it works
 

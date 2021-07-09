@@ -72,7 +72,7 @@ Two numbers are reported for each sample:
 ### Visualizing subtrees
 Each sample in the table will have a button, e.g.
 <img src="data/subtree_button.png" height=45/>
-allowing you to open that subtree in Auspice. The subtree visualization will open in a new browser tab (but data is not sent over the Internet).
+allowing you to open the subtree containing that sample in Auspice. The subtree visualization will open in a new browser tab (but data is not sent over the Internet).
 
 ### Downloading data
 Newick files for each of the generated subtrees can be downloaded at the bottom of the Auspice visualization page.

@@ -6,7 +6,7 @@
   "scripts": {
     "modify-auspice-server": "node ./src/vendor/auspice.us/modify-auspice-server.js",
     "postinstall": "npm run modify-auspice-server",
-    "build": "rm -rf dist && auspice build --verbose --extend ./src/pages/auspice-config.json && cp -r public/* dist",
+    "build": "rm -rf dist && auspice build --verbose --extend ./src/pages/auspice-config.json && cp -r public/* dist && bash scripts/pull_port.sh",
     "start": "auspice view --verbose --handlers ./src/vendor/auspice.us/handlers.js",
     "develop": "auspice develop --verbose --extend ./src/pages/auspice-config.json"
   },

@@ -37,6 +37,8 @@
 ## Usage
 > :warning:	This tool is intended to be used <strong>only for sequences that cannot be shared publicly</strong>. If you do not have this requirement, please use the [UShER web tool](https://genome.ucsc.edu/cgi-bin/hgPhyloPlace) and submit your sequences to an INSDC member institution (NCBI, EMBL-EBI, or DDBJ) and GISAID
 
+ShUShER is currently designed for use with SARS-CoV-2 genomes. The user supplies a set of samples in FASTA or VCF format, and the provided samples are placed on a continuously growing global tree ([read more](https://www.biorxiv.org/content/10.1101/2021.04.03.438321v1) about the global tree). After placement, subtrees containing user samples can be visualized (using [Auspice](https://docs.nextstrain.org/projects/auspice/en/stable/)).
+
 ## How it works
 
 The ShUShER web app uses a ported version of UShER that can be run client-side in a web browser. The original C++ [code base]() is compiled to WebAssembly with [Emscripten]() and wrapped in a React frontend (read more about the port [here]()). User-provided samples are not transmitted across the Internet, and computation is performed locally in the browser. We use a modified version of [Auspice]() to display the subtrees computed by UShER. The visualization opens in a new browser tab, using [localStorage]() to share data between tabs without transmitting any user data over the web.

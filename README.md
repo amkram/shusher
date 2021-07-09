@@ -67,7 +67,7 @@ Two numbers are reported for each sample:
 
 >**Number of maximally parsimonious placements** is the number of potential placements in the tree with minimal parsimony score. A higher number indicates a less confident placement.
 
->**Parsimony score** is number of mutations/changes that must be added to the tree when placing this sample. The higher the number, the more diverged the sample.
+>**Parsimony score** is the number of mutations/changes that must be added to the tree when placing this sample. The higher the number, the more diverged the sample.
 
 ### Visualizing subtrees
 Each sample in the table will have a button, e.g.

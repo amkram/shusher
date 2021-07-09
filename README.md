@@ -2,14 +2,14 @@
   <img src="web-app/public/img/logo.png" height=100/>
 </div>
 <div align="center">
-  <strong>Secret Ultrafast Sample placement on Existing tRees</strong>
+  <strong>private Ultrafast Sample placement on Existing tRees</strong>
 </div>
 <div align="center">
   Private, browser-based placement of genome sequences on phylogenetic trees using <a href="https://github.com/yatisht/usher">UShER</a>.
 <br />
 <br />
 
-  | :computer_mouse:	Access ShUShER <a href="">here</a>! |
+  | :computer_mouse:	Access shUShER <a href="">here</a>! |
 | --- |
 </div>
 <div align="center">

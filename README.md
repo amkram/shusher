@@ -2,17 +2,16 @@
   <img src="web-app/public/img/logo.png" height=100/>
 </div>
 <div align="center">
-  <strong>Secret Ultrafast Sample placement on Existing tRees</strong>
+  private (<strong>Sh</strong>h :shushing_face:) <strong>U</strong>ltrafast <strong>S</strong>ample placement on <strong>E</strong>xisting t<strong>R</strong>ees</strong>
 </div>
 <div align="center">
-  Private, browser-based placement of genome sequences on phylogenetic trees using <a href="https://github.com/yatisht/usher">UShER</a>.
-<br />
 <br />
 
   | :computer_mouse:	Access ShUShER <a href="">here</a>! |
 | --- |
 </div>
 <div align="center">
+    ShUShER is a browser tool for placing sensitive genome sequences on phylogenetic trees using <a href="https://github.com/yatisht/usher">UShER</a>.
   <h3>
     <a href="#usage">
       Usage
@@ -36,7 +35,9 @@
 
 
 ## Usage
-> :warning:	This tool is intended to be used only for sequences that cannot be shared publicly. If you do not have this requirement, please use the [UShER web tool](https://genome.ucsc.edu/cgi-bin/hgPhyloPlace) and submit your sequences to an INSDC member institution (NCBI, EMBL-EBI, or DDBJ) and GISAID
+> :warning:	This tool is intended to be used <strong>only for sequences that cannot be shared publicly</strong>. If you do not have this requirement, please use the [UShER web tool](https://genome.ucsc.edu/cgi-bin/hgPhyloPlace) and submit your sequences to an INSDC member institution (NCBI, EMBL-EBI, or DDBJ) and GISAID
+
+ShUShER is currently designed for use with SARS-CoV-2 genomes. The user supplies a set of samples in FASTA or VCF format, and the provided samples are placed on a continuously growing global tree ([read more](https://www.biorxiv.org/content/10.1101/2021.04.03.438321v1) about the global tree). After placement, subtrees containing user samples can be visualized (using [Auspice](https://docs.nextstrain.org/projects/auspice/en/stable/)).
 
 ## How it works
 

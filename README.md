@@ -85,18 +85,19 @@ The ShUShER web app uses a ported version of UShER that can be run client-side i
 FASTA to VCF conversion is performed by aligning each provided sample pairwise to the reference SARS-CoV-2 genome. The implementation of pairwise alignment is from [Nextclade](https://github.com/nextstrain/nextclade/blob/0ed4e6a1569dbd0b91e9d4861494e97861a11e7e/packages/web/src/algorithms/alignPairwise.ts).
 
 ## Installation (for developers)
-
-### Running the web app locally
 >SHUShER currently only supports building on Linux systems, and has been tested on Ubuntu 20.04
 
-If you would like to run ShUShER locally, first download the source code, e.g.:
+If you would like to run ShUShER locally or modify the source, first download the source code, e.g.:
   
   `wget https://github.com/amkram/shusher/archive/refs/tags/v0.1.0.tar.gz`
+  
   `tar xvzf v0.1.0.tar.gz`
 
 View all "Releases" in the right sidebar if you want to download a specific version. Alternately, cloning this repository will give you the latest, unreleased code, but may be unstable.
 
 The downloaded source code contains code for building both the web app and the UShER port.
+
+### Running the web app locally
 
 Enter the `web-app` subdirectory and run
 
@@ -111,4 +112,12 @@ And to start the local server, run
   `npm start`
   
 You should now be able to access ShUShER in your browser at `localhost:4000`
+
 ### Compiling UShER to WebAssembly
+
+The directory `usher-port` contains the original C++ UShER code and a script that will compile it to WebAssembly.
+
+`build-essential` `protobuf-compiler`
+`emar` `wget`
+
+Run `installUbuntuWeb.sh`

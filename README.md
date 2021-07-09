@@ -2,7 +2,7 @@
   <img src="web-app/public/img/logo.png" height=100/>
 </div>
 <div align="center">
-  <strong>private Ultrafast Sample placement on Existing tRees</strong>
+  <strong>private (Shh :shushing_face:) Ultrafast Sample placement on Existing tRees</strong>
 </div>
 <div align="center">
   Private, browser-based placement of genome sequences on phylogenetic trees using <a href="https://github.com/yatisht/usher">UShER</a>.

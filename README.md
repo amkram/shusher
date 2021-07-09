@@ -37,7 +37,7 @@
   - [Downloading data](#downloading-data)
 - [How it works](#how-it-works)
 - [Installation](#installation-for-developers)
-
+  - [Running the web app locally](#running-the-web-app-locally)
 
 ## Usage
 > :warning:	This tool is intended to be used <strong>only for sequences that cannot be shared publicly</strong>. If you do not have this requirement, please use the [UShER web tool](https://genome.ucsc.edu/cgi-bin/hgPhyloPlace) and submit your sequences to an INSDC member institution (NCBI, EMBL-EBI, or DDBJ) and GISAID
@@ -86,3 +86,29 @@ FASTA to VCF conversion is performed by aligning each provided sample pairwise t
 
 ## Installation (for developers)
 
+### Running the web app locally
+>SHUShER currently only supports building on Linux systems, and has been tested on Ubuntu 20.04
+
+If you would like to run ShUShER locally, first download the source code, e.g.:
+  
+  `wget https://github.com/amkram/shusher/archive/refs/tags/v0.1.0.tar.gz`
+  `tar xvzf v0.1.0.tar.gz`
+
+View all "Releases" in the right sidebar if you want to download a specific version. Alternately, cloning this repository will give you the latest, unreleased code, but may be unstable.
+
+The downloaded source code contains code for building both the web app and the UShER port.
+
+Enter the `web-app` subdirectory and run
+
+  `npm install`
+
+To build the app, run
+
+  `npm build`
+  
+And to start the local server, run
+
+  `npm start`
+  
+You should now be able to access ShUShER in your browser at `localhost:4000`
+### Compiling UShER to WebAssembly

@@ -1,17 +1,20 @@
 {
   "name": "usher-web-app",
+  "config": {
+    "usherBundle": "latest"
+  },
   "version": "0.1.0",
   "author": "Alexander Kramer",
   "license": "AGPL-3.0-only",
   "scripts": {
     "modify-auspice-server": "node ./src/vendor/auspice.us/modify-auspice-server.js",
     "postinstall": "npm run modify-auspice-server",
-    "build": "rm -rf dist && auspice build --verbose --extend ./src/pages/auspice-config.json && cp -r public/* dist && bash scripts/pull_port.sh",
+    "build": "rm -rf dist && auspice build --verbose --extend ./src/pages/auspice-config.json && cp -r public/* dist",
+    "postBuild": "scripts/install_bundle.sh $npm_package_config_usherBundle",
     "start": "auspice view --verbose --handlers ./src/vendor/auspice.us/handlers.js",
     "develop": "auspice develop --verbose --extend ./src/pages/auspice-config.json"
   },
-  "dependencies": {
-    "@material-ui/core": "^4.11.4",
+  "dependencies": { "@material-ui/core": "^4.11.4",
     "@material-ui/icons": "^4.11.2",
     "@material-ui/lab": "^4.0.0-alpha.58",
     "auspice": "2.23.0",

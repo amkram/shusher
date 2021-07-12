@@ -38,6 +38,7 @@
 - [How it works](#how-it-works)
 - [Installation](#installation-for-developers)
   - [Running the web app locally](#running-the-web-app-locally)
+  - [Compiling UShER to WebAssembly](#compiling-usher-to-webassembly)
 
 ## Usage
 > :warning:	This tool is intended to be used <strong>only for sequences that cannot be shared publicly</strong>. If you do not have this requirement, please use the [UShER web tool](https://genome.ucsc.edu/cgi-bin/hgPhyloPlace) and submit your sequences to an INSDC member institution (NCBI, EMBL-EBI, or DDBJ) and GISAID
@@ -115,9 +116,33 @@ You should now be able to access ShUShER in your browser at `localhost:4000`
 
 ### Compiling UShER to WebAssembly
 
-The directory `usher-port` contains the original C++ UShER code and a script that will compile it to WebAssembly.
+The directory `usher-port` contains the original C++ UShER code and a script that will compile it to WebAssembly. You only need to compile UShER yourself if you want to change the UShER source code. Otherwise, the web app will automatically use the most recent pre-compiled release from this repository.
 
-`build-essential` `protobuf-compiler`
-`emar` `wget`
+#### 1. Install Dependencies
 
-Run `installUbuntuWeb.sh`
+`sudo apt-get update`
+
+`sudo apt-get install wget python3 build-essential cmake protobuf-compiler dh-autoreconf`
+
+#### 2. Compile UShER 
+
+`./installUbuntuWeb.sh`
+
+This script will download the C++ library dependencies of UShER, make some modifications necessary for WebAssembly compilation, and then compile them using emscripten. Output in the `build` directory includes `usher.wasm`, `usher.js`, `usher.data`, and `usher.worker.js`, all of which are used by the ShUShER web app.
+
+#### 3. Specify custom UShER code
+
+By default, the web app grabs the latest tagged release of the WebAssembly UShER bundle from this repository. If you compiled UShER yourself using the above steps, you can tell ShUShER to use your compiled code instead.
+
+In the `web-app` subdirectory, edit `package.json` and change the following line:
+
+    config: {
+      usherBundle: "latest"
+    }
+
+to
+
+    config: {
+      usherBundle: "[path to build output]"
+    }
+

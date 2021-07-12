@@ -43,17 +43,6 @@ path_boost_zlib=$(readlink -f stage/lib/libboost_zlib.a)
 
 cd ..
 
-# TBB (ported)
-wget https://github.com/amkram/oneTBB-2019-wasm/archive/refs/tags/v1.0.tar.gz
-tar xzf v1.0.tar.gz
-cd oneTBB-2019-wasm-1.0
-tbb_includes=$(readlink -f include)
-emmake make -j8
-path_tbb=$(readlink -f build/linux_wasm32_gcc_emscripten_wasm32_release/libtbb.so.2)
-path_tbbmalloc=$(readlink -f build/linux_wasm32_gcc_emscripten_wasm32_release/libtbbmalloc.so.2)
-path_tbbmalloc_proxy=$(readlink -f build/linux_wasm32_gcc_emscripten_wasm32_release/libtbbmalloc_proxy.so.2)
-
-cd ..
 
 # Protocol Buffers
 protoc_version=$(protoc --version | cut -d " " -f 2)

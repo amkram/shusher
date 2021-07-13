@@ -1,3 +1,4 @@
 usher-port/test/* linguist-vendored
 usher-port/test/*/* linguist-vendored
 usher-port/src/*  linguist-vendored
+usher-port/src/*/*  linguist-vendored

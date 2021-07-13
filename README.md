@@ -6,7 +6,9 @@
 </div>
 <div align="center">
   
- <br /> 
+ <br />
+  
+  [![Build UShER Port](https://github.com/amkram/shusher/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/amkram/shusher/actions/workflows/build_and_test.yml)
 <a target="_blank" href="https://github.com/yatisht/usher/tree/119083b36486f485e027be2ee8868cc058ce218c">
 <img src="https://img.shields.io/badge/UShER%20Version-commit%20119083b-%235e0000" />
 </a>

@@ -7,12 +7,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-
-      - name: Deploy web-app subdirectory to Heroku
+      
+      - name: Deploy to Heroku
         uses: onekiloparsec/heroku-node-deploy-subfolder@v1.1.0
         with:
-          api_key: ${{secrets.HEROKU_API_KEY}}
-          email: ${{secrets.HEROKU_EMAIL}}
-          app_name: usher-web-app-dev
-          heroku_branch: "master"
-          subfolder: "web-app"
+          heroku_api_key: ${{secrets.HEROKU_API_KEY}}
+          heroku_email: ${{secrets.HEROKU_EMAIL}}
+          heroku_app_name: usher-web-app-dev
+          appdir: "web-app"

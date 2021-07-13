@@ -17,11 +17,13 @@ jobs:
     - name: Checkout ShUShER
       uses: actions/checkout@v2
 
+    - name: Parse UShER Version
+      run: echo "USHER_VERSION=$(cat ./usher_version.txt)" >> $GITHUB_ENV
+      
     - name: Checkout UShER 
       uses: actions/checkout@v2
       with:
         repository: yatisht/usher
-        run: echo "USHER_VERSION=$(cat ./usher_version.txt)" >> $GITHUB_ENV
         ref: ${{ env.USHER_VERSION }}
         path: usher
         

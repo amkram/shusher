@@ -1,5 +1,5 @@
 #!/bin/bash
-
+# used for creating new bundles for github release
 # e.g. ./make-bundle v0.1.0
 
 mkdir -p bundle

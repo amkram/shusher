@@ -32,4 +32,4 @@ jobs:
       uses: mymindstorm/setup-emsdk@v10
 
     - name: Compile Usher (C++)
-      run: sudo ./installUbuntu.sh
+      run: sudo usher-port/installUbuntu.sh

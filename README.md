@@ -5,8 +5,16 @@
   private (<strong>Sh</strong>h :shushing_face:) <strong>U</strong>ltrafast <strong>S</strong>ample placement on <strong>E</strong>xisting t<strong>R</strong>ees</strong>
 </div>
 <div align="center">
-<br />
+  
+ <br /> 
+<a target="_blank" href="https://github.com/yatisht/usher/tree/119083b36486f485e027be2ee8868cc058ce218c">
+<img src="https://img.shields.io/badge/UShER%20Version-commit%20119083b-%235e0000" />
+</a>
 
+ <br /> 
+ <br /> 
+ 
+ 
   | :computer_mouse:	Access ShUShER <a href="">here</a>! |
 | --- |
 </div>

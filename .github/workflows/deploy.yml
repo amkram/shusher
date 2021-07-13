@@ -9,7 +9,7 @@ jobs:
       - uses: actions/checkout@v2
       
       - name: Deploy to Heroku
-        uses: onekiloparsec/heroku-node-deploy-subfolder@v1.1.0
+        uses: akhileshns/heroku-deploy@v3.12.12 # This is the action
         with:
           heroku_api_key: ${{secrets.HEROKU_API_KEY}}
           heroku_email: ${{secrets.HEROKU_EMAIL}}

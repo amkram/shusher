@@ -21,7 +21,8 @@ jobs:
       uses: actions/checkout@v2
       with:
         repository: yatisht/usher
-        ref: 119083b36486f485e027be2ee8868cc058ce218c
+        run: echo "USHER_VERSION=$(cat ./usher_version.txt)" >> $GITHUB_ENV
+        ref: ${{ env.USHER_VERSION }}
         path: usher
         
 
@@ -29,4 +30,4 @@ jobs:
       uses: mymindstorm/setup-emsdk@v10
 
     - name: Compile Usher (C++)
-      run: sudo ./installUbuntu.sh
+      run: sudo /installUbuntu.sh

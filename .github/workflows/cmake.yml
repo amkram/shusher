@@ -18,7 +18,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Checkout UShER 
-    - uses: actions/checkout@v2
+      uses: actions/checkout@v2
       with:
         repository: yatisht/usher
         ref: '119083b'
@@ -29,5 +29,4 @@ jobs:
       uses: mymindstorm/setup-emsdk@v10
 
     - name: Compile Usher (C++)
-      # Build your program with the given configuration
       run: sudo ./installUbuntu.sh

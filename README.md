@@ -5,8 +5,16 @@
   private (<strong>Sh</strong>h :shushing_face:) <strong>U</strong>ltrafast <strong>S</strong>ample placement on <strong>E</strong>xisting t<strong>R</strong>ees</strong>
 </div>
 <div align="center">
-<br />
+  
+ <br /> 
+<a target="_blank" href="https://github.com/yatisht/usher/tree/119083b36486f485e027be2ee8868cc058ce218c">
+<img src="https://img.shields.io/badge/UShER%20Version-commit%20119083b-%235e0000" />
+</a>
 
+ <br /> 
+ <br /> 
+ 
+ 
   | :computer_mouse:	Access ShUShER <a href="">here</a>! |
 | --- |
 </div>
@@ -38,6 +46,7 @@
 - [How it works](#how-it-works)
 - [Installation](#installation-for-developers)
   - [Running the web app locally](#running-the-web-app-locally)
+  - [Compiling UShER to WebAssembly](#compiling-usher-to-webassembly)
 
 ## Usage
 > :warning:	This tool is intended to be used <strong>only for sequences that cannot be shared publicly</strong>. If you do not have this requirement, please use the [UShER web tool](https://genome.ucsc.edu/cgi-bin/hgPhyloPlace) and submit your sequences to an INSDC member institution (NCBI, EMBL-EBI, or DDBJ) and GISAID
@@ -85,18 +94,19 @@ The ShUShER web app uses a ported version of UShER that can be run client-side i
 FASTA to VCF conversion is performed by aligning each provided sample pairwise to the reference SARS-CoV-2 genome. The implementation of pairwise alignment is from [Nextclade](https://github.com/nextstrain/nextclade/blob/0ed4e6a1569dbd0b91e9d4861494e97861a11e7e/packages/web/src/algorithms/alignPairwise.ts).
 
 ## Installation (for developers)
-
-### Running the web app locally
 >SHUShER currently only supports building on Linux systems, and has been tested on Ubuntu 20.04
 
-If you would like to run ShUShER locally, first download the source code, e.g.:
+If you would like to run ShUShER locally or modify the source, first download the source code, e.g.:
   
   `wget https://github.com/amkram/shusher/archive/refs/tags/v0.1.0.tar.gz`
+  
   `tar xvzf v0.1.0.tar.gz`
 
 View all "Releases" in the right sidebar if you want to download a specific version. Alternately, cloning this repository will give you the latest, unreleased code, but may be unstable.
 
 The downloaded source code contains code for building both the web app and the UShER port.
+
+### Running the web app locally
 
 Enter the `web-app` subdirectory and run
 
@@ -111,4 +121,36 @@ And to start the local server, run
   `npm start`
   
 You should now be able to access ShUShER in your browser at `localhost:4000`
+
 ### Compiling UShER to WebAssembly
+
+The directory `usher-port` contains the original C++ UShER code and a script that will compile it to WebAssembly. You only need to compile UShER yourself if you want to change the UShER source code. Otherwise, the web app will automatically use the most recent pre-compiled release from this repository.
+
+#### 1. Install Dependencies
+
+`sudo apt-get update`
+
+`sudo apt-get install wget python3 build-essential cmake protobuf-compiler dh-autoreconf`
+
+#### 2. Compile UShER 
+
+`./installUbuntuWeb.sh`
+
+This script will download the C++ library dependencies of UShER, make some modifications necessary for WebAssembly compilation, and then compile them using emscripten. Output in the `build` directory includes `usher.wasm`, `usher.js`, `usher.data`, and `usher.worker.js`, all of which are used by the ShUShER web app.
+
+#### 3. Specify custom UShER code
+
+By default, the web app grabs the latest tagged release of the WebAssembly UShER bundle from this repository. If you compiled UShER yourself using the above steps, you can tell ShUShER to use your compiled code instead.
+
+In the `web-app` subdirectory, edit `package.json` and change the following line:
+
+    config: {
+      usherBundle: "latest"
+    }
+
+to
+
+    config: {
+      usherBundle: "[path to build output]"
+    }
+

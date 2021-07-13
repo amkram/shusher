@@ -1,0 +1,35 @@
+name: BuildUsherPort
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+    
+    - name: Checkout ShUShER
+      uses: actions/checkout@v2
+
+    - name: Parse UShER Version
+      run: echo "USHER_VERSION=$(cat ./usher_version.txt)" >> $GITHUB_ENV
+      
+    - name: Checkout UShER 
+      uses: actions/checkout@v2
+      with:
+        repository: yatisht/usher
+        ref: ${{ env.USHER_VERSION }}
+        path: usher
+        
+
+    - name: Set up Emscripten
+      uses: mymindstorm/setup-emsdk@v10
+
+    - name: Compile Usher (C++)
+      run: sudo /installUbuntu.sh

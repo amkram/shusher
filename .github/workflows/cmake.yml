@@ -21,7 +21,7 @@ jobs:
       uses: actions/checkout@v2
       with:
         repository: yatisht/usher
-        ref: '119083b'
+        ref: 119083b36486f485e027be2ee8868cc058ce218c
         path: usher
         
 

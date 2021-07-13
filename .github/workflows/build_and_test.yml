@@ -1,4 +1,4 @@
-name: BuildUsherPort
+name: Build UShER Port
 
 on:
   push:

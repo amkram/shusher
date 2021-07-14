@@ -2,12 +2,12 @@
 
 name: Tag UShER Bundle
 
-on: workflow_dispatch
-
-inputs:
-  version:
-    description: 'Version number of bundle to release, e.g. v0.1.1'
-    required: true
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number, e.g. v0.1.1'
+        required: true
 
 jobs:
   build:
@@ -19,4 +19,4 @@ jobs:
       - name: Run a multi-line script
         run: |
           mkdir -p bundle
-          mkdir -p bundle/
+          mkdir -p bundle/${{ inputs.version }}

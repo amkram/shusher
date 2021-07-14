@@ -16,7 +16,16 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Run a multi-line script
+      - name: Prepare bundle
         run: |
-          mkdir -p bundle
-          mkdir -p bundle/${{ github.event.inputs.version }}
+          mkdir usher-port-bundle-${{ github.event.inputs.version }}
+          cp usher-port/build/usher.* usher-port-bundle-${{ github.event.inputs.version }}
+          cd usher-port-bundle-${{ github.event.inputs.version }}
+          tar cvzf ../usher-port-bundle-${{ github.event.inputs.version }}.tar.gz *
+          
+      - name: Release bundle
+        uses: marvinpinto/action-automatic-releases@latest
+        with:
+          repo_token: ${{ secrets.RELEASE_TOKEN }}
+          title: ShUShER ${{ github.event.inputs.version }}
+          files: usher-port-bundle-${{ github.event.inputs.version }}.tar.gz

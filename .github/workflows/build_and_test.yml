@@ -31,6 +31,14 @@ jobs:
     - name: Set up Emscripten
       uses: mymindstorm/setup-emsdk@v10
 
-    - name: Compile Usher (C++)
+    - name: Compile UShER (C++)
       working-directory: usher
       run: sudo ./installUbuntu.sh
+      
+    - name: Compile UShER (WebAssembly)
+      working-directory: usher-port
+      run: |
+        sudo apt-get update
+        sudo apt-get install wget python3 build-essential cmake protobuf-compiler dh-autoreconf
+        ./installUbuntuWeb.sh
+        

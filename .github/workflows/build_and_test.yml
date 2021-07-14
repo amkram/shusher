@@ -13,7 +13,11 @@ jobs:
   build:
     runs-on: ubuntu-20.04
     steps:
-    
+    - name: Pull latest tree
+      run: |
+        wget ${{ secrets.GLOBAL_TREE_PATH }}
+        ls .github
+      
     - name: Checkout ShUShER
       uses: actions/checkout@v2
 

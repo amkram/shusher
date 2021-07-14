@@ -1,0 +1,22 @@
+# This workflow creates a new tagged WebAssembly/JS bundle and releases it
+
+name: Tag UShER Bundle
+
+on: workflow_dispatch
+
+inputs:
+  version:
+    description: 'Version number of bundle to release, e.g. v0.1.1'
+    required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Run a multi-line script
+        run: |
+          mkdir -p bundle
+          mkdir -p bundle/

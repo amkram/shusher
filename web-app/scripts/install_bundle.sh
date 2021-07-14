@@ -17,7 +17,7 @@ if [[ "$1" == "latest" ]]; then
 
 else
 	echo "custom path to port provided: $1"
-	if [[ -f $1/usher.wasm && -f $1/usher.js && -f $1/usher.data &&  -f $1/usher.worker.js ]]; then
+	if [[ -f $1/usher.wasm && -f $1/usher.js &&  -f $1/usher.worker.js ]]; then
 		cp $1/usher.* dist/js
 		echo "done installing port."
 	else

@@ -65,11 +65,22 @@ cp test/preload/* build/preload
 # build UShER
 cd build
 
-emcmake cmake -DBoost_INCLUDE_DIR=$boost_includes -DTBB_INCLUDE_DIR=$tbb_includes \
-	-DProtobuf_INCLUDE_DIR=$protobuf_includes -DBoost_LIB_FS=$path_boost_fs -DBoost_LIB_IO=$path_boost_io \
-	-DBoost_LIB_PO=$path_boost_po -DBoost_LIB_ZLIB=$path_boost_zlib \
-	-DTBB_LIB_TBB=$path_tbb -DTBB_LIB_TBBMALLOC=$path_tbbmalloc -DTBB_LIB_TBBMALLOC_PROXY=$path_tbbmalloc_proxy \
-	-DProtobuf_LIBRARIES=$protobuf_libraries -DPre_JS=$pre_js -DPre_Reference=$reference_file_name ..
+if [[ -z "$1" ]] ; then
+	# compile normally
+	emcmake cmake -DBoost_INCLUDE_DIR=$boost_includes -DTBB_INCLUDE_DIR=$tbb_includes \
+		-DProtobuf_INCLUDE_DIR=$protobuf_includes -DBoost_LIB_FS=$path_boost_fs -DBoost_LIB_IO=$path_boost_io \
+		-DBoost_LIB_PO=$path_boost_po -DBoost_LIB_ZLIB=$path_boost_zlib \
+		-DTBB_LIB_TBB=$path_tbb -DTBB_LIB_TBBMALLOC=$path_tbbmalloc -DTBB_LIB_TBBMALLOC_PROXY=$path_tbbmalloc_proxy \
+		-DProtobuf_LIBRARIES=$protobuf_libraries -DPre_JS=$pre_js -DPre_Reference=$reference_file_name ..
+elif [[ $1 == "test" ]] ; then
+	# compile for testing
+	emcmake cmake -DTEST_MODE=TRUE -DBoost_INCLUDE_DIR=$boost_includes -DTBB_INCLUDE_DIR=$tbb_includes \
+		-DProtobuf_INCLUDE_DIR=$protobuf_includes -DBoost_LIB_FS=$path_boost_fs -DBoost_LIB_IO=$path_boost_io \
+		-DBoost_LIB_PO=$path_boost_po -DBoost_LIB_ZLIB=$path_boost_zlib \
+		-DTBB_LIB_TBB=$path_tbb -DTBB_LIB_TBBMALLOC=$path_tbbmalloc -DTBB_LIB_TBBMALLOC_PROXY=$path_tbbmalloc_proxy \
+		-DProtobuf_LIBRARIES=$protobuf_libraries -DPre_JS=$pre_js -DPre_Reference=$reference_file_name ..
+fi
+
 
 emmake make -j8 VERBOSE=1
 cd ..

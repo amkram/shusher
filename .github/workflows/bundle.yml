@@ -20,6 +20,9 @@ jobs:
         working-directory: usher-port
         run: |
           mkdir usher-port-bundle-${{ github.event.inputs.version }}
+          sudo apt-get update
+          sudo apt-get install wget python3 build-essential cmake protobuf-compiler dh-autoreconf
+          ./installUbuntuWeb.sh
           cp build/usher.* usher-port-bundle-${{ github.event.inputs.version }}
           cd usher-port-bundle-${{ github.event.inputs.version }}
           tar cvzf ../usher-port-bundle-${{ github.event.inputs.version }}.tar.gz *

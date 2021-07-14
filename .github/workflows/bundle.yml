@@ -19,4 +19,4 @@ jobs:
       - name: Run a multi-line script
         run: |
           mkdir -p bundle
-          mkdir -p bundle/${{ inputs.version }}
+          mkdir -p bundle/${{ github.event.inputs.version }}

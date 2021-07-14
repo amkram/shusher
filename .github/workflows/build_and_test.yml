@@ -16,7 +16,7 @@ jobs:
     - name: Pull latest tree
       run: |
         wget ${{ secrets.GLOBAL_TREE_PATH }}
-        ls .github
+        ls
       
     - name: Checkout ShUShER
       uses: actions/checkout@v2

@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
     std::string dout_filename;
     std::string outdir;
     std::string vcf_filename;
-    //uint32_t num_cores = tbb::task_scheduler_init::default_num_threads();
+    uint32_t num_cores = tbb::task_scheduler_init::default_num_threads();
     uint32_t num_threads;
     uint32_t max_trees;
     uint32_t max_uncertainty;
@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
     size_t print_subtrees_single=0;
     po::options_description desc{"Options"};
 
-    //std::string num_threads_message = "Number of threads to use when possible [DEFAULT uses all available cores, " + std::to_string(num_cores) + " detected on this machine]";
+    std::string num_threads_message = "Number of threads to use when possible [DEFAULT uses all available cores, " + std::to_string(num_cores) + " detected on this machine]";
     desc.add_options()
         ("vcf,v", po::value<std::string>(&vcf_filename)->required(), "Input VCF file (in uncompressed or gzip-compressed .gz format) [REQUIRED]")
         ("tree,t", po::value<std::string>(&tree_filename)->default_value(""), "Input tree file")
@@ -77,7 +77,7 @@ int main(int argc, char** argv) {
          "Do not add new samples to the tree")
         ("detailed-clades,D", po::bool_switch(&detailed_clades), \
          "In clades.txt, write a histogram of annotated clades and counts across all equally parsimonious placements")
-       // ("threads,T", po::value<uint32_t>(&num_threads)->default_value(num_cores), num_threads_message.c_str())
+        ("threads,T", po::value<uint32_t>(&num_threads)->default_value(num_cores), num_threads_message.c_str())
         ("version", "Print version number")
         ("help,h", "Print help messages");
     
@@ -186,8 +186,8 @@ int main(int argc, char** argv) {
     // timer object to be used to measure runtimes of individual stages
     Timer timer; 
 
-    //fprintf(stderr, "Initializing %u worker threads.\n\n", num_threads);
-    //tbb::task_scheduler_init init(num_threads);
+    fprintf(stderr, "Initializing %u worker threads.\n\n", num_threads);
+    tbb::task_scheduler_init init(num_threads);
 
 #if SAVE_PROFILE == 1
     Instrumentor::Get().BeginSession("test-main", "p1.json");
@@ -276,79 +276,79 @@ int main(int argc, char** argv) {
         // different tree samples at the corresponding VCF line/position. The 
         // mappers use Fitch-Sankoff algorithm to assign mutations at different
         // branches of the tree and update the mutation-annotated tree (T)
-        // // accordingly. 
-        // tbb::flow::graph mapper_graph;
+        // accordingly. 
+        tbb::flow::graph mapper_graph;
 
-        // tbb::flow::function_node<mapper_input, int> mapper(mapper_graph, tbb::flow::unlimited, mapper_body());
-        // tbb::flow::source_node <mapper_input> reader (mapper_graph,
-        //         [&] (mapper_input &inp) -> bool {
+        tbb::flow::function_node<mapper_input, int> mapper(mapper_graph, tbb::flow::unlimited, mapper_body());
+        tbb::flow::source_node <mapper_input> reader (mapper_graph,
+                [&] (mapper_input &inp) -> bool {
                 
-        //         //check if reached end-of-file
-        //         int curr_char = instream.peek();
-        //         if(curr_char == EOF)
-        //             return false;
+                //check if reached end-of-file
+                int curr_char = instream.peek();
+                if(curr_char == EOF)
+                    return false;
                 
-        //         std::string s;
-        //         std::getline(instream, s);
-        //         std::vector<std::string> words;
-        //         MAT::string_split(s, words);
-        //         inp.variant_pos = -1;
+                std::string s;
+                std::getline(instream, s);
+                std::vector<std::string> words;
+                MAT::string_split(s, words);
+                inp.variant_pos = -1;
 
-        //         // Header is found when "POS" is the second word in the line
-        //         if ((not header_found) && (words.size() > 1)) {
-        //           if (words[1] == "POS") {
-        //           // Sample names start from the 10th word in the header
-        //             for (size_t j=9; j < words.size(); j++) {
-        //               variant_ids.emplace_back(words[j]);
-        //               // If sample name not in tree, add it to missing_samples
-        //               if (bfs_idx.find(words[j]) == bfs_idx.end()) {
-        //                 missing_samples.emplace_back(Missing_Sample(words[j]));
-        //               }
-        //             }
-        //             header_found = true;
-        //           }
-        //         }
-        //         else if (header_found) {
-        //             if (words.size() != 9+variant_ids.size()) {
-        //                 fprintf(stderr, "ERROR! Incorrect VCF format.\n");
-        //                 exit(1);
-        //             }
-        //             std::vector<std::string> alleles;
-        //             alleles.clear();
-        //             inp.variant_pos = std::stoi(words[1]); 
-        //             MAT::string_split(words[4], ',', alleles);
-        //             // T will be modified by the mapper with mutation
-        //             // annotations
-        //             inp.T = T;
-        //             inp.chrom = words[0];
-        //             inp.bfs = &bfs;
-        //             inp.bfs_idx = &bfs_idx;
-        //             inp.variant_ids = &variant_ids;
-        //             inp.missing_samples = &missing_samples;
-        //             // Ref nuc id uses one-hot encoding (A:0b1, C:0b10, G:0b100,
-        //             // T:0b1000)
-        //             inp.ref_nuc = MAT::get_nuc_id(words[3][0]);
-        //             assert((inp.ref_nuc & (inp.ref_nuc-1)) == 0); //check if it is power of 2
-        //             inp.variants.clear();
-        //             for (size_t j=9; j < words.size(); j++) {
-        //                 if (isdigit(words[j][0])) {
-        //                     int allele_id = std::stoi(words[j]);
-        //                     if (allele_id > 0) { 
-        //                         std::string allele = alleles[allele_id-1];
-        //                         inp.variants.emplace_back(std::make_tuple(j-9, MAT::get_nuc_id(allele[0])));
-        //                     }
-        //                 }
-        //                 else {
-        //                     inp.variants.emplace_back(std::make_tuple(j-9, MAT::get_nuc_id('N')));
-        //                 }
-        //             }
-        //         }
-        //         return true;
-        //         }, true );
-        // tbb::flow::make_edge(reader, mapper);
-        // mapper_graph.wait_for_all();
+                // Header is found when "POS" is the second word in the line
+                if ((not header_found) && (words.size() > 1)) {
+                  if (words[1] == "POS") {
+                  // Sample names start from the 10th word in the header
+                    for (size_t j=9; j < words.size(); j++) {
+                      variant_ids.emplace_back(words[j]);
+                      // If sample name not in tree, add it to missing_samples
+                      if (bfs_idx.find(words[j]) == bfs_idx.end()) {
+                        missing_samples.emplace_back(Missing_Sample(words[j]));
+                      }
+                    }
+                    header_found = true;
+                  }
+                }
+                else if (header_found) {
+                    if (words.size() != 9+variant_ids.size()) {
+                        fprintf(stderr, "ERROR! Incorrect VCF format.\n");
+                        exit(1);
+                    }
+                    std::vector<std::string> alleles;
+                    alleles.clear();
+                    inp.variant_pos = std::stoi(words[1]); 
+                    MAT::string_split(words[4], ',', alleles);
+                    // T will be modified by the mapper with mutation
+                    // annotations
+                    inp.T = T;
+                    inp.chrom = words[0];
+                    inp.bfs = &bfs;
+                    inp.bfs_idx = &bfs_idx;
+                    inp.variant_ids = &variant_ids;
+                    inp.missing_samples = &missing_samples;
+                    // Ref nuc id uses one-hot encoding (A:0b1, C:0b10, G:0b100,
+                    // T:0b1000)
+                    inp.ref_nuc = MAT::get_nuc_id(words[3][0]);
+                    assert((inp.ref_nuc & (inp.ref_nuc-1)) == 0); //check if it is power of 2
+                    inp.variants.clear();
+                    for (size_t j=9; j < words.size(); j++) {
+                        if (isdigit(words[j][0])) {
+                            int allele_id = std::stoi(words[j]);
+                            if (allele_id > 0) { 
+                                std::string allele = alleles[allele_id-1];
+                                inp.variants.emplace_back(std::make_tuple(j-9, MAT::get_nuc_id(allele[0])));
+                            }
+                        }
+                        else {
+                            inp.variants.emplace_back(std::make_tuple(j-9, MAT::get_nuc_id('N')));
+                        }
+                    }
+                }
+                return true;
+                }, true );
+        tbb::flow::make_edge(reader, mapper);
+        mapper_graph.wait_for_all();
 
-        // fprintf(stderr, "Completed in %ld msec \n\n", timer.Stop());
+        fprintf(stderr, "Completed in %ld msec \n\n", timer.Stop());
     }
     // Check if input mutation-annotated tree filename is specified
     else if (din_filename != "") {
@@ -606,10 +606,10 @@ int main(int argc, char** argv) {
 
                     // Parallel for loop to search for most parsimonious
                     // placements. Real action happens within mapper2_body
-                   // static tbb::affinity_partitioner ap;
-                    //tbb::parallel_for( tbb::blocked_range<size_t>(0, total_nodes),
-                      //      [&](tbb::blocked_range<size_t> r) {
-                            for (size_t k=0; k<total_nodes; ++k){
+                    static tbb::affinity_partitioner ap;
+                    tbb::parallel_for( tbb::blocked_range<size_t>(0, total_nodes),
+                            [&](tbb::blocked_range<size_t> r) {
+                            for (size_t k=r.begin(); k<r.end(); ++k){
                                 mapper2_input inp;
                                 inp.T = T;
                                 inp.node = bfs[k];
@@ -628,7 +628,7 @@ int main(int argc, char** argv) {
 
                                 mapper2_body(inp, false);
                             }       
-                //    }, ap); 
+                    }, ap); 
 
                     best_parsimony_scores.emplace_back(best_set_difference);
                     num_best_placements.emplace_back(num_best);
@@ -659,7 +659,7 @@ int main(int argc, char** argv) {
 
             fprintf(stderr, "Adding missing samples to the tree.\n");  
         }
-
+        
         // Traverse in sorted sample order
         for (size_t idx=0; idx<indexes.size(); idx++) {
 
@@ -732,17 +732,17 @@ int main(int argc, char** argv) {
                 
                 std::vector<bool> node_has_unique(total_nodes, false);
                 std::vector<size_t> best_j_vec;
+                best_j_vec.emplace_back(0);
                 
                 size_t num_best = 1;
                 MAT::Node* best_node = T->root;
-                best_j_vec.emplace_back(0);
 
                 // Parallel for loop to search for most parsimonious
                 // placements. Real action happens within mapper2_body
-                //static tbb::affinity_partitioner ap;
-                //tbb::parallel_for( tbb::blocked_range<size_t>(0, total_nodes),
-                  //      [&](tbb::blocked_range<size_t> r) {
-                        for (size_t k=0; k<total_nodes; ++k){
+                static tbb::affinity_partitioner ap;
+                tbb::parallel_for( tbb::blocked_range<size_t>(0, total_nodes),
+                        [&](tbb::blocked_range<size_t> r) {
+                        for (size_t k=r.begin(); k<r.end(); ++k){
                         mapper2_input inp;
                         inp.T = T;
                         inp.node = bfs[k];
@@ -763,11 +763,45 @@ int main(int argc, char** argv) {
                         inp.best_j_vec = &best_j_vec;
                         inp.node_has_unique = &(node_has_unique);
 
-                        mapper2_body(inp, print_parsimony_scores);
+                        mapper2_body(inp, print_parsimony_scores, false);
                         }       
-               //         }, ap); 
+                        }, ap); 
 
                 if (!print_parsimony_scores) {
+                    best_set_difference += 1;
+                    
+                    auto tmp_vec = std::vector<size_t>(best_j_vec.begin(), best_j_vec.end());
+                    
+                    num_best = 0;
+                    best_j_vec.clear();
+
+                    // Parallel for loop to search for most parsimonious
+                    // placements. Real action happens within mapper2_body
+                    tbb::parallel_for( tbb::blocked_range<size_t>(0, tmp_vec.size()),
+                            [&](tbb::blocked_range<size_t> r) {
+                            for (size_t l=r.begin(); l<r.end(); ++l){
+                            auto k = tmp_vec[l]; 
+                            mapper2_input inp;
+                            inp.T = T;
+                            inp.node = bfs[k];
+                            inp.missing_sample_mutations = &missing_samples[s].mutations;
+                            inp.excess_mutations = &node_excess_mutations[k];
+                            inp.imputed_mutations = &node_imputed_mutations[k];
+                            inp.best_node_num_leaves = &best_node_num_leaves;
+                            inp.best_set_difference = &best_set_difference;
+                            inp.best_node = &best_node;
+                            inp.best_j =  &best_j;
+                            inp.num_best = &num_best;
+                            inp.j = k;
+                            inp.has_unique = &best_node_has_unique;
+
+                            inp.best_j_vec = &best_j_vec;
+                            inp.node_has_unique = &(node_has_unique);
+
+                            mapper2_body(inp, false);
+                            }       
+                            }, ap); 
+
                     fprintf(stderr, "Current tree size (#nodes): %zu\tSample name: %s\tParsimony score: %d\tNumber of parsimony-optimal placements: %zu\n", total_nodes, sample.c_str(), \
                             best_set_difference, num_best);
                     // Prints a warning message if 2 or more

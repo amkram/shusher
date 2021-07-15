@@ -5,7 +5,7 @@
 #include <unordered_set>
 #include <mutex>
 #include <sys/time.h>
-//#include <tbb/mutex.h>
+#include <tbb/mutex.h>
 
 #pragma once
 //extern std::mutex data_lock;
@@ -102,4 +102,4 @@ struct mapper2_input {
     }
 };
 
-void mapper2_body(mapper2_input& inp, bool compute_parsimony_scores);
+void mapper2_body(mapper2_input& inp, bool compute_parsimony_scores, bool compute_vecs = true);

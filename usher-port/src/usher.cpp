@@ -180,7 +180,7 @@ int main(int argc, char** argv) {
         fprintf(stderr, "Creating output directory.\n\n");
         boost::filesystem::create_directory(path);
     }
-    //path = boost::filesystem::canonical(outdir);
+    
     outdir = path.generic_string();
 
     // timer object to be used to measure runtimes of individual stages

@@ -18,7 +18,7 @@ jobs:
           path: latest-usher
 
       - name: Modify usher.cpp (remove a line that breaks ShUShER)
-        run: sed -i 's/path = boost::filesystem::canonical(outdir);//g' usher/src/usher.cpp
+        run: sed -i 's/path = boost::filesystem::canonical(outdir);//g' latest-usher/src/usher.cpp
         
       - name: Copy latest UShER into ShUShER repo
         run: |

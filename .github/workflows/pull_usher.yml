@@ -1,0 +1,42 @@
+name: Pull latest UShER Source
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      # Grab the latest UShER
+      - name: Checkout UShER 
+        uses: actions/checkout@v2
+        with:
+          repository: yatisht/usher
+          path: latest-usher
+
+      - name: Modify usher.cpp (remove a line that breaks ShUShER)
+        run: sed -i 's/path = boost::filesystem::canonical(outdir);//g' usher/src/usher.cpp
+        
+      - name: Copy latest UShER into ShUShER repo
+        run: |
+          mv usher-port/src/js .
+          rm -rf usher-port/src/*
+          mv js usher-port/src
+          cp -r latest-usher/src/* usher-port/src
+      
+      - name: Get version SHA of latest UShER commit
+        id: getversion
+        run: |
+          git ls-remote https://github.com/yatisht/usher | grep HEAD | cut -f1 > usher_version.txt
+          echo "::set-output name=usher_version::$(cat usher_version.txt)"
+      
+      - name: Commit new source
+        uses: EndBug/add-and-commit@v7.2.1
+        with:
+          add: 'usher-port/src'
+          author_name: 'Alex Kramer'
+          author_email: 'alex.kramer@ucsc.edu'
+          message: 'auto-update to UShER commit ${{steps.getversion.outputs.usher_version}}'

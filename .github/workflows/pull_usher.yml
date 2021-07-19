@@ -36,7 +36,7 @@ jobs:
       - name: Commit new source
         uses: EndBug/add-and-commit@v7.2.1
         with:
-          add: 'usher-port/src'
+          add: 'usher-port/src usher_version.txt'
           author_name: 'Alex Kramer'
           author_email: 'alex.kramer@ucsc.edu'
           message: 'auto-update to UShER commit ${{steps.getversion.outputs.usher_version}}'

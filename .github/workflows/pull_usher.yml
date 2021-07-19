@@ -32,6 +32,12 @@ jobs:
         run: |
           git ls-remote https://github.com/yatisht/usher | grep HEAD | cut -f1 > usher_version.txt
           echo "::set-output name=usher_version::$(cat usher_version.txt)"
+
+      - name: Update README with UShER version
+        run: |
+          sed -n '/BEGIN_USHER_BADGE/{p;:a;N;/END_USHER_BADGE/!ba;s/.*\n/<a target="_blank" href="https://github.com/yatisht/usher/tree/aaaa"><img src="https://img.shields.io/badge/UShER%20Version-commit%2011ccaaaa9083b-%235e0000"/></a>\n/};p' README.md
+          
+
       
       - name: Commit new source
         uses: EndBug/add-and-commit@v7.2.1

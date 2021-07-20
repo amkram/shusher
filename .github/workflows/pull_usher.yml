@@ -1,9 +1,6 @@
 name: Pull latest UShER Source
 
 on:
-  schedule:
-    # Run twice a day
-    - cron:  '0 0,12 * * *'
 
   workflow_dispatch:
 

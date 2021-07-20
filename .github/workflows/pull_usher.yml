@@ -18,8 +18,22 @@ jobs:
           repository: yatisht/usher
           path: latest-usher
 
+
+      - name: Get version SHA of latest UShER commit
+        id: getversion
+        run: |
+          export OLD_VERSION=$(cat usher_version.txt)
+          export NEW_VERSION=$(git ls-remote https://github.com/yatisht/usher | grep HEAD | cut -f1)
+          
+          echo "::set-output name=is_new_version::$(test $OLD_VERSION == $NEW_VERSION && echo FALSE || echo TRUE)"
+
+          echo "::set-output name=usher_version::$NEW_VERSION"
+          echo $NEW_VERSION > usher_version.txt
+          
+
       - name: Modify usher.cpp (remove a line that breaks ShUShER)
         run: sed -i 's/path = boost::filesystem::canonical(outdir);//g' latest-usher/src/usher.cpp
+        if: steps.getversion.outputs.is_new_version == "TRUE"
         
       - name: Copy latest UShER into ShUShER repo
         run: |
@@ -27,18 +41,16 @@ jobs:
           rm -rf usher-port/src/*
           mv js usher-port/src
           cp -r latest-usher/src/* usher-port/src
-      
-      - name: Get version SHA of latest UShER commit
-        id: getversion
-        run: |
-          git ls-remote https://github.com/yatisht/usher | grep HEAD | cut -f1 > usher_version.txt
-          echo "::set-output name=usher_version::$(cat usher_version.txt)"
+        if: steps.getversion.outputs.is_new_version == "TRUE"
+
 
       - name: Update README with UShER version
         run: |
           export REPLACE="<a target=\"_blank\" href=\"https:\/\/github.com\/yatisht\/usher\/tree\/${{ steps.getversion.outputs.usher_version }}\"><img src=\"https:\/\/img.shields.io\/badge\/UShER%20Version-commit%20$( head -c 8 usher_version.txt )-%235e0000\"\/><\/a>"
           sed -n '/BEGIN_USHER_BADGE/{p;:a;N;/END_USHER_BADGE/!ba;s/.*\n/'"$REPLACE"'\n/};p' README.md > tmp
           cat tmp > README.md
+        if: steps.getversion.outputs.is_new_version == "TRUE"
+
 
       
       - name: Commit new source
@@ -48,3 +60,5 @@ jobs:
           author_name: 'Alex Kramer'
           author_email: 'alex.kramer@ucsc.edu'
           message: 'auto-update to UShER commit ${{ steps.getversion.outputs.usher_version }}'
+        if: steps.getversion.outputs.is_new_version == "TRUE"
+

@@ -35,14 +35,15 @@ jobs:
 
       - name: Update README with UShER version
         run: |
-          sed -n '/BEGIN_USHER_BADGE/{p;:a;N;/END_USHER_BADGE/!ba;s/.*\n/<a target="_blank" href="https://github.com/yatisht/usher/tree/aaaa"><img src="https://img.shields.io/badge/UShER%20Version-commit%2011ccaaaa9083b-%235e0000"/></a>\n/};p' README.md
-          
+          export REPLACE="<a target="_blank" href="https://github.com/yatisht/usher/tree/${{ steps.getversion.outputs.usher_version }}"><img src="https://img.shields.io/badge/UShER%20Version-commit%20${{ head -c 8 usher_version.txt }}-%235e0000"/></a>"
+          sed -n '/BEGIN_USHER_BADGE/{p;:a;N;/END_USHER_BADGE/!ba;s/.*\n/$REPLACE\n/};p' README.md > tmp
+          cat tmp > README.md
 
       
       - name: Commit new source
         uses: EndBug/add-and-commit@v7.2.1
         with:
-          add: 'usher-port/src usher_version.txt'
+          add: 'usher-port/src usher_version.txt README.md'
           author_name: 'Alex Kramer'
           author_email: 'alex.kramer@ucsc.edu'
-          message: 'auto-update to UShER commit ${{steps.getversion.outputs.usher_version}}'
+          message: 'auto-update to UShER commit ${{ steps.getversion.outputs.usher_version }}'

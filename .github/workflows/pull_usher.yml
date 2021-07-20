@@ -35,7 +35,7 @@ jobs:
 
       - name: Update README with UShER version
         run: |
-          export REPLACE="<a target="_blank" href="https://github.com/yatisht/usher/tree/${{ steps.getversion.outputs.usher_version }}"><img src="https://img.shields.io/badge/UShER%20Version-commit%20${{ head -c 8 usher_version.txt }}-%235e0000"/></a>"
+          export REPLACE="<a target="_blank" href="https://github.com/yatisht/usher/tree/${{ steps.getversion.outputs.usher_version }}"><img src="https://img.shields.io/badge/UShER%20Version-commit%20$( head -c 8 usher_version.txt )-%235e0000"/></a>"
           sed -n '/BEGIN_USHER_BADGE/{p;:a;N;/END_USHER_BADGE/!ba;s/.*\n/$REPLACE\n/};p' README.md > tmp
           cat tmp > README.md
 

@@ -1,4 +1,4 @@
-name: Build UShER Port
+name: UShER Integration Tests
 
 on:
   push:

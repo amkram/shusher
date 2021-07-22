@@ -9,7 +9,7 @@
  <br />
   
   [![Build UShER Port](https://github.com/amkram/shusher/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/amkram/shusher/actions/workflows/build_and_test.yml)<!---BEGIN_USHER_BADGE-->
-<a target="_blank" href="https://github.com/yatisht/usher/tree/9f5bcd584ea2eed07b400cadb0fdfcd01b91732a"><img src="https://img.shields.io/badge/UShER%20Version-commit%209f5bcd58-%235e0000"/></a>
+<a target="_blank" href="https://github.com/yatisht/usher/tree/97d8e99e94f032d125bd58a914aafad4e86adb4b"><img src="https://img.shields.io/badge/UShER%20Version-commit%2097d8e99e-%235e0000"/></a>
 <!---END_USHER_BADGE-->
  
  

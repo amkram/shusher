@@ -1,4 +1,4 @@
-name: UShER Integration Tests
+name: Integration Tests
 
 on:
   push:

@@ -46,6 +46,8 @@
 - [Installation](#installation-for-developers)
   - [Running the web app locally](#running-the-web-app-locally)
   - [Compiling UShER to WebAssembly](#compiling-usher-to-webassembly)
+- [Contributing](#contributing)
+- [Acknowledgements](#acknowledgements)
 
 ## Usage
 > :warning:	This tool is intended to be used <strong>only for sequences that cannot be shared publicly</strong>. If you do not have this requirement, please use the [UShER web tool](https://genome.ucsc.edu/cgi-bin/hgPhyloPlace) and submit your sequences to an INSDC member institution (NCBI, EMBL-EBI, or DDBJ) and GISAID
@@ -153,3 +155,23 @@ to
       usherBundle: "[path to build output]"
     }
 
+## Contributing
+We welcome and encourage contributions to ShUShER from the community. If you would like to contribute, please read the contribution [guidelines](CONTRIBUTING.md) and [code of conduct](CODE_OF_CONDUCT.md).
+
+## Acknowledgements
+This project uses or adapts code from several open-source projects. We are grateful for their contributions.
+
+
+Pairwise sequence alignment uses the implementation from [Nextclade](https://github.com/nextstrain/nextclade).
+
+
+Visualization of subtrees is performed with [Auspice](https://github.com/nextstrain/auspice/blob/5132a1c1d063761eb02dc5434a8316c6d5be7085/docs/index.rst).
+
+
+Scripts to modify the Auspice server are from [auspice.us](https://github.com/nextstrain/auspice.us).
+
+
+Nextclade, Auspice, and auspice.us are part of the [Nextstrain](https://github.com/nextstrain) project.
+
+
+The core functionality of this tool is a ported version of [UShER](https://github.com/yatisht/usher).

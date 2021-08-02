@@ -1,4 +1,4 @@
-# Code of Conduct - shUShER
+# Code of Conduct - ShUShER
 
 ## Our Pledge
 

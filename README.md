@@ -10,7 +10,7 @@
   
   [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
   [![Integration Tests](https://github.com/amkram/shusher/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/amkram/shusher/actions/workflows/build_and_test.yml)<!---BEGIN_USHER_BADGE-->
-<a target="_blank" href="https://github.com/yatisht/usher/tree/324b57a4541ad6d00e3bb415284a61684f7be534"><img src="https://img.shields.io/badge/UShER%20Version-commit%20324b57a4-%235e0000"/></a>
+<a target="_blank" href="https://github.com/yatisht/usher/tree/d24f2e325fe70189561aa709e9509b1eb4bbe946"><img src="https://img.shields.io/badge/UShER%20Version-commit%20d24f2e32-%235e0000"/></a>
 <!---END_USHER_BADGE-->
  
  

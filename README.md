@@ -13,7 +13,7 @@
 <a target="_blank" href="https://github.com/yatisht/usher/tree/13b317b6641379b8a83f0182b3a8ae631e292df0"><img src="https://img.shields.io/badge/UShER%20Version-commit%2013b317b6-%235e0000"/></a>
 <!---END_USHER_BADGE-->
  
- 
+ ( This project is in active development is not yet released. )
   | :computer_mouse:	Access ShUShER <a href="">here</a>! |
 | --- |
 </div>

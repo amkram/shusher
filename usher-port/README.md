@@ -3,7 +3,6 @@
 This directory contains modifications and build scripts to compile UShER to WebAssembly. All of the below steps are performed in `installUbuntuWeb.sh`. See <a href="../README.md">here</a> for details on compiling UShER to WebAssembly.
 
 ## Source code changes
-- TBB dependency removed from all files
 - line `path = boost::filesystem::canonical(outdir);` removed from `usher.cpp`
 
 ## Library compilation

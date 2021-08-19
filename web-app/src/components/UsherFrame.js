@@ -236,7 +236,7 @@ function UsherFrame(props) {
             } else {
                 sampleFileName = '/new_samples.vcf';
             }
-            var args = ['-k', '' + samplesPerSubtree, '-i', '/latest_tree.pb.gz', '-v', sampleFileName, '-d', '/'];
+            var args = ['-k', '' + samplesPerSubtree, '-i', '/latest_tree.pb.gz', '-v', sampleFileName, '-d', '/', '-T1'];
             window.callMain(args);
             console.log(args);
             console.log('Running usher.' + samplesPerSubtree);

@@ -11,8 +11,8 @@ authors:
     orcid: 0000-0000-0000-0000
     affiliation: "1, 2"
   - name: Russell Corbett-Detig
-  - orcid: 0000-0000-0000-0000
-  - affiliation: "1, 2"
+    orcid: 0000-0000-0000-0000
+    affiliation: "1, 2"
 affiliations:
  - name: Department of Biomolecular Engineering, University of California Santa Cruz. Santa Cruz, CA 95064, USA
    index: 1

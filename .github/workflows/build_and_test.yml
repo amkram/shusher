@@ -7,7 +7,7 @@ on:
     branches: [ master ]
   workflow_run:
     workflows: ["Pull latest UShER Source"]
-    branches: [main]
+    branches: [ master ]
     types:
       - completed
 
@@ -18,6 +18,7 @@ jobs:
   build:
     runs-on: ubuntu-20.04
     steps:
+    
     - name: Pull latest tree
       run: |
         wget ${{ secrets.GLOBAL_TREE_PATH }}
@@ -40,14 +41,20 @@ jobs:
     - name: Set up Emscripten
       uses: mymindstorm/setup-emsdk@v10
 
-    - name: Compile UShER (C++)
+    - name: Compile and run UShER (C++)
       working-directory: usher
-      run: sudo install/installUbuntu.sh
-      
-    - name: Compile UShER (WebAssembly)
+      run: |
+        sudo install/installUbuntu.sh
+        wget https://hgwdev.gi.ucsc.edu/~angie/UShER_SARS-CoV-2/public-latest.all.masked.pb.gz
+        build/usher -k50 -i public-latest.all.masked.pb.gz -T1 -d . -v ../usher-port/test/preload/test_samples.vcf
+        
+    - name: Compile and run UShER (WebAssembly)
       working-directory: usher-port
       run: |
+        pwd
+        ls
         sudo apt-get update
         sudo apt-get install wget python3 build-essential cmake protobuf-compiler dh-autoreconf
-        ./installUbuntuWeb.sh
+        ./installUbuntuWeb.sh test
+        node --experimental-wasm-threads build/usher.js -k50 -i ../usher/public-latest.all.masked.pb.gz -T1 -d . -v test/preload/test_samples.vcf
         

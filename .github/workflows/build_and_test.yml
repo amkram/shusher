@@ -7,7 +7,7 @@ on:
     branches: [ master ]
   workflow_run:
     workflows: ["Pull latest UShER Source"]
-    branches: [main]
+    branches: [ master ]
     types:
       - completed
 

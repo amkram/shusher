@@ -44,10 +44,10 @@ jobs:
     - name: Compile and run UShER (C++)
       working-directory: usher
       run: |
-        sudo install/installUbuntu.sh
-        wget https://hgwdev.gi.ucsc.edu/~angie/UShER_SARS-CoV-2/public-latest.all.masked.pb.gz
-        build/usher -k50 -i public-latest.all.masked.pb.gz -T1 -d . -v /usher-port/test/preload/test_samples.vcf
-      
+        pwd
+        cd ..
+        pwd
+        ls
     - name: Compile and run UShER (WebAssembly)
       working-directory: usher-port
       run: |

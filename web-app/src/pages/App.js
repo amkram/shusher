@@ -8,8 +8,8 @@ import { fastaToVcf } from '../tools/alignment/fastaToVcf'
 import { createStateFromQueryOrJSONs } from "auspice/src/actions/recomputeReduxState";
 import { errorNotification } from "auspice/src/actions/notifications";
 import { showTreeFromJson } from '../tools/auspice/showTree';
-
-import '../styles/global.css'
+import packageJson from '../../package.json';
+import '../styles/global.css';
 
 
 const styles = theme => ({
@@ -41,6 +41,16 @@ const styles = theme => ({
 		margin: '0 auto',
 		marginTop: '30px',
 		display: 'block'
+	},
+	logo: {
+		width: "310px",
+		margin: "0 auto"
+	},
+	logoP: {
+		textAlign: "right",
+		fontWeight: "600",
+		marginTop: "0px",
+		marginRight: "15px"
 	}
 });
 
@@ -136,8 +146,11 @@ class App extends React.Component {
 		const { classes } = this.props;
 		return (
 			<div className={classes.root}>
-				<div className="logo">
-					<img className={classes.logoImg} src="/dist/img/logo.png" alt="UShER logo"/>
+				<div>
+					<div className={classes.logo}>
+						<img className={classes.logoImg} src="/dist/img/logo.png" alt="UShER logo"/>
+						<p className={classes.logoP}><em>v{packageJson.version}</em></p>
+					</div>
 					<Box className={classes.usherBox}>
 						<UsherFrame returned={this.state.returned} 
 							latestTreeDownloaded={this.state.latestTreeDownloaded} 

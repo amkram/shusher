@@ -449,6 +449,7 @@ function UsherFrame(props) {
                 <p>It is appropriate for use with samples containing Protected Health Information (PHI). Your uploaded sequences are not transmitted over the Internet and
                     all computation and visualization is performed locally in your web browser.
                 </p>
+                <p>Please see the <a href="https://github.com/amkram/shusher">Github repository</a> for detailed instructions and information.</p>
                 <h3 className={classes.headingLeft}>Should I use this?</h3>
                 <p>
                     Only if your samples contain sensitive data. We strongly encourage you to share your SARS-CoV-2 sequences with the public. 

@@ -47,6 +47,7 @@
   - [Running the web app locally](#running-the-web-app-locally)
   - [Compiling UShER to WebAssembly](#compiling-usher-to-webassembly)
 - [Contributing](#contributing)
+- [About this repository](#about-this-repository)
 - [Acknowledgements](#acknowledgements)
 
 ## Usage
@@ -157,6 +158,18 @@ to
 
 ## Contributing
 We welcome and encourage contributions to ShUShER from the community. If you would like to contribute, please read the contribution [guidelines](CONTRIBUTING.md) and [code of conduct](CODE_OF_CONDUCT.md).
+
+## About this repository
+`usher-port` contains the scripts and files needed to compile UShER to WebAssembly. See [here](https://github.com/amkram/shusher/tree/master/usher-port) for details on the process.
+
+
+`web-app` contains the React application that uses the UShER port.
+
+Twice a day, the UShER C++ source hosted in this repository is updated from the main [UShER repository](https://github.com/yatisht/usher).
+
+Upon each push to the master branch, the integration test Github Action is run, which (1) compiles the latest source from the main UShER repo to a binary executable, (2) compiles UShER to WebAssembly with this repo's latest code, and (3) runs both on a sample file and compares the outputs, ensuring they are the same.
+
+New releases are tagged periodically and pushed to the live web app.
 
 ## Acknowledgements
 This project uses or adapts code from several open-source projects. We are grateful for their contributions.

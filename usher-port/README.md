@@ -4,13 +4,13 @@ This directory contains modifications and build scripts to compile UShER to WebA
 
 Most files in this directory are auto-update upon changes to the main UShER code base. `installUbuntuWeb.sh` the steps necessary to compile UShER to WebAssembly.
 
-## Source code changes
+# Source code changes
 - line `path = boost::filesystem::canonical(outdir);` removed from `usher.cpp`
 
-## Library compilation
-UShER has two dependencies (excluding TBB which is removed for ShUShER): Protocol Buffers and Boost.
+# Library compilation
+UShER has three dependencies: [Protocol Buffers](https://developers.google.com/protocol-buffers), [Boost](https://www.boost.org/), and [oneTBB](https://github.com/oneapi-src/oneTBB). The libraries must be compiled to WebAssembly prior to linking with the UShER port. Details below.
 
-### Boost
+## Boost
 ShUShER uses Boost 1.76.0. Boost's build system `b2` ships with configuration support for Emscripten, yielding WebAssembly output. There is a bug in the build system that fails to recognize the correct generator for Emscripten. It is fixed by appending
     
     import generators ;
@@ -32,6 +32,10 @@ Protocol Buffers doesn't require modifications to the source code before compili
     ./autogen.sh && emconfigure ./configure --disable-shared --enable-static --build=wasm32 --target=wasm32
     emmake make -j8
 in the source directory.
+
+## oneTBB
+oneTBB requires a fair amount of source code modifications to successfully compile to WebAssembly. This modified version is hosted in a [separate repository
+](https://github.com/amkram/oneTBB-2019-wasm) and pulled during the build process. At the present, multithreading does not work with ShUShER, but oneTBB is still included to avoid modifying the UShER source code.
 
 # Compiling to WebAssembly
 After the above steps are completed, the libraries are linked and UShER is compiled to WebAssembly with `emmake` and `make` (see `installUbuntuWeb.sh`).

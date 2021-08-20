@@ -53,13 +53,11 @@ jobs:
         node --experimental-wasm-threads build/usher.js -k50 -i ../usher/public-latest.all.masked.pb.gz -T1 -d . -v test/preload/test_samples.vcf
         echo "DIFF_PASSED=1" >> $GITHUB_ENV
         cmp ../usher/final-tree.nh ./final-tree.nh || echo "DIFF_PASSED=0" >> $GITHUB_ENV
-        cmp ../usher/subtree-1.nh ./subtree-1.nh || echo "DIFF_PASSED=0" >> $GITHUB_ENV
-        cmp ../usher/subtree-2.nh ./subtree-2.nh || echo "DIFF_PASSED=0" >> $GITHUB_ENV
         cmp ../usher/mutation-paths.txt ./mutation-paths.txt || echo "DIFF_PASSED=0" >> $GITHUB_ENV
 
         
     - name: Check diffs
-      if: ${{ env.DIFF_PASSED }} == 0
+      if: ${{ env.DIFF_PASSED == 0 }}
       uses: actions/github-script@v3
       with:
         script: |

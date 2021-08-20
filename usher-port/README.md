@@ -1,6 +1,6 @@
 # UShER WebAssembly Port
 
-This directory contains modifications and build scripts to compile UShER to WebAssembly. All of the below steps are performed in `installUbuntuWeb.sh`. See <a href="../README.md">here</a> for details on compiling UShER to WebAssembly.
+This directory contains modifications and build scripts to compile UShER to WebAssembly. All of the below steps are performed in `installUbuntuWeb.sh`.
 
 Most files in this directory are auto-update upon changes to the main UShER code base. `installUbuntuWeb.sh` the steps necessary to compile UShER to WebAssembly.
 

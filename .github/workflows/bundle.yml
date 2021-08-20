@@ -32,5 +32,6 @@ jobs:
         with:
           repo_token: ${{ secrets.RELEASE_TOKEN }}
           automatic_release_tag: "latest"
+          prerelease: false
           title: ShUShER ${{ github.event.inputs.version }}
           files: usher-port-bundle-${{ github.event.inputs.version }}.tar.gz

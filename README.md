@@ -100,11 +100,11 @@ FASTA to VCF conversion is performed by aligning each provided sample pairwise t
 
 If you would like to run ShUShER locally or modify the source, first download the source code, e.g.:
   
-  `wget https://github.com/amkram/shusher/archive/refs/tags/v0.1.0.tar.gz`
+  `wget https://github.com/amkram/shusher/archive/refs/tags/latest.tar.gz`
   
-  `tar xvzf v0.1.0.tar.gz`
+  `tar xvzf latest.tar.gz`
 
-View all "Releases" in the right sidebar if you want to download a specific version. Alternately, cloning this repository will give you the latest, unreleased code, but may be unstable.
+The above command will download the latest tagged release of ShUShER. View all "Releases" in the right sidebar if you want to download a specific version. Alternately, cloning this repository will give you the latest, unreleased code, but may be unstable.
 
 The downloaded source code contains code for building both the web app and the UShER port.
 

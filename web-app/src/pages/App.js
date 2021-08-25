@@ -61,10 +61,15 @@ class App extends React.Component {
 			usherLoaded: false,
 			treeVisible: false,
 			latestTreeDownloaded: false,
+			jsReady: false
 		};
 	}
 	
-
+    checkJS = () => {
+		if (typeof window.Module.asm !== "undefined") {
+			this.setState({jsReady: true});
+		}
+	}
 	/* Called once when the app loads.
 	 * Depending on the route, it will load the usher main app
 	 * or a subtree in auspice
@@ -102,6 +107,7 @@ class App extends React.Component {
 			afterJS.onload = () => { 
 				console.log("Usher JS loaded.");
 				this.setState({usherLoaded: true});
+				window.setInterval(this.checkJS, 100);
 				var mimeType = 'application/octet-stream';
 				window.saveFileFromUrl('/latest_tree.pb.gz', latestTreeUrl, mimeType)
 					.then(() => {
@@ -153,7 +159,8 @@ class App extends React.Component {
 					</div>
 					<Box className={classes.usherBox}>
 						<UsherFrame returned={this.state.returned} 
-							latestTreeDownloaded={this.state.latestTreeDownloaded} 
+							latestTreeDownloaded={this.state.latestTreeDownloaded}
+							jsReady={this.state.jsReady}
 						/>
 					</Box>
 				</div>

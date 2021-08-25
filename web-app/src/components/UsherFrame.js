@@ -124,7 +124,7 @@ function UsherFrame(props) {
     const [usherCompleted, setUsherCompleted] = React.useState(false);
     const [subtreeFiles, setSubtreeFiles] = React.useState([]);
     const [sampleData, setSampleData] = React.useState([]);
-    const [samplesPerSubtree, setSamplesPerSubtree] = React.useState(50);
+    const [samplesPerSubtree, setSamplesPerSubtree] = React.useState(1000);
     const [started, setStarted] = React.useState(false);
     const [showCancelUsherDialog, setShowCancelUsherDialog] = React.useState(false);
     const [showInfo, setshowInfo] = React.useState(true);
@@ -229,7 +229,7 @@ function UsherFrame(props) {
             console.log("Samples must be > 0");
             return;
         }
-        if (props.latestTreeDownloaded && newSamplesReady) {
+        if (props.latestTreeDownloaded && newSamplesReady && props.jsReady) {
             var sampleFileName;
             if (useExample) {
                 sampleFileName = '/preload/test_samples.vcf';
@@ -396,7 +396,7 @@ function UsherFrame(props) {
                                     </Grid>
                                 </Grid>
                                 <Grid item xs={3} className={classes.leftAlignItem}>
-                                    <RunButton handleRunUsher={handleRunUsher} showLoading={!(props.latestTreeDownloaded && newSamplesReady)}/>
+                                    <RunButton handleRunUsher={handleRunUsher} showLoading={!(props.latestTreeDownloaded && newSamplesReady && props.jsReady)}/>
                                 </Grid>
                                 <Grid item xs={5} className={classes.usherCardBottomItem}>
                        

@@ -21,7 +21,7 @@ function SubtreeForm(props) {
         <TextField
           id="standard-number"
           type="number"
-		  defaultValue={50}
+		  defaultValue={1000}
 		  className={classes.formControl}
           InputLabelProps={{
             shrink: true,

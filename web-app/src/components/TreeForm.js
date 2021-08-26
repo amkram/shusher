@@ -13,11 +13,8 @@ const useStyles = makeStyles((theme) => ({
 	}
   }));
 
-
 function TreeForm(props) {
 	const classes = useStyles();
-
-	
 	return (
 	<div>
 		<FormControl className={classes.formControl}>

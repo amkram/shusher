@@ -14,7 +14,7 @@
 <!---END_USHER_BADGE-->
  
  ( This project is in active development and is not yet released. )
-  | :computer_mouse:	Access ShUShER <a href="">here</a>! |
+  | :computer_mouse:	Access ShUShER <a href="https://shusher.gi.ucsc.edu">here</a>! |
 | --- |
 </div>
 <div align="center">

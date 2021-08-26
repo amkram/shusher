@@ -1,6 +1,6 @@
 html,
 body {
- background-color: #f5f7f1;
+  background-color: #f5f7f1;
 }
 
 .logo-img {
@@ -10,13 +10,13 @@ body {
   display: block;
 }
 
-
 @font-face {
-  font-family: 'Inter';
-  src: local('Inter'), url(../vendor/fonts/Inter/Inter-Regular.woff) format('woff');
+  font-family: "Inter";
+  src: local("Inter"),
+    url(../vendor/fonts/Inter/Inter-Regular.woff) format("woff");
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
 }

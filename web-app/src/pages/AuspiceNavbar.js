@@ -2,7 +2,7 @@
 // https://github.com/nextstrain/auspice.us
 
 import React from "react";
-import styled from 'styled-components';
+import styled from "styled-components";
 
 const NavBarContainer = styled.div`
   display: flex;
@@ -22,10 +22,9 @@ const Title = styled.a`
   cursor: pointer;
 `;
 
-const AuspiceNavBar = ({narrativeTitle, sidebar}) => {
+const AuspiceNavBar = ({ narrativeTitle, sidebar }) => {
   if (!sidebar) return null;
-  return ('');
-}
-
+  return "";
+};
 
 export default AuspiceNavBar;

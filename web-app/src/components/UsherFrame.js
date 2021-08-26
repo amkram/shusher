@@ -21,6 +21,7 @@ import InfoTooltip from "./InfoTooltip";
 import ConfirmationDialog from "./ConfirmationDialog";
 import ErrorSnackbar from "./ErrorSnackbar";
 import Button from "@material-ui/core/Button";
+import InfoSection from './InfoSection';
 
 /**
  * This component contains most of web app logic for running UShER.
@@ -57,9 +58,6 @@ const useStyles = makeStyles((theme) => ({
   heading: {
     textAlign: "center",
     paddingTop: "25px",
-  },
-  headingLeft: {
-    textAlign: "left",
   },
   overlay: {
     position: "relative",
@@ -98,14 +96,6 @@ const useStyles = makeStyles((theme) => ({
   },
   usherCardBottomItem: {
     marginBottom: "42px",
-  },
-  alignedDiv: {
-    textAlign: "justify",
-  },
-  bold: {
-    backgroundColor: "inherit",
-    color: "#5c0404",
-    fontSize: "100%",
   },
   smallText: {
     fontSize: "10pt",

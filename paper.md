@@ -30,8 +30,8 @@ bibliography: paper.bib
 
 Phylogenetic trees are often used to help trace the origin, spread, and evolution of viruses. The continuously growing number of sequenced SARS-CoV-2 genomes has quickly overwhelmed the capabilities of many existing tree construction methods. UShER is a method that can efficiently place newly sequenced genomes on existing, large phylogenetic trees. Many researchers use the UShER web tool hosted at UCSC to place their samples on a global tree constructed from over one million SARS-CoV-2 genomes. Some viral genomes are considered Protected Health Information and cannot be transmitted over the Internet. Presently, researchers cannot use the UCSC web tool for such data and must instead install and run UShER locally with a command-line application. ShUShER is an alternative to this, providing a user-friendly platform for researchers to run UShER in their web browser while keeping their data private.
 
-The current use case of ShUShER is the placement of SARS-CoV-2 genome samples on an existing global
-tree of public sequences (maintained [here](https://hgdownload.soe.ucsc.edu/goldenPath/wuhCor1/UShER_SARS-CoV-2/)), though it
+The current use case of ShUShER is the placement of SARS-CoV-2 genome samples on an existing [global
+tree](https://hgdownload.soe.ucsc.edu/goldenPath/wuhCor1/UShER_SARS-CoV-2/) of public sequences [@McBroome:2021], though it
 has future applications for any type of pathogen phylogenetic analysis.
 
 # Acknowledgements

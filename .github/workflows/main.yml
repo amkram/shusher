@@ -7,7 +7,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: executing remote ssh commands using password
+      - name: SSH into shusher.gi.ucsc.edu and update running shusher
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOSTNAME }}
@@ -15,5 +15,16 @@ jobs:
           password: ${{ secrets.SSH_PASSWORD }}
           port: ${{ secrets.SSH_PORT }}
           script: |
-            whoami
-            ls -l
+            cd /data
+            mkdir -p temp
+            cd temp
+            wget https://github.com/amkram/shusher/archive/refs/tags/latest.tar.gz
+            tar xvzf latest.tar.gz
+            cd shusher-latest/web-app
+            npm install && npm run build
+            cd /data
+            pkill screen
+            rm -rf shusher-latest
+            mv temp/shusher-latest shusher-latest
+            cd shusher-latest/web-app
+            npm run start

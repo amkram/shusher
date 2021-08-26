@@ -26,5 +26,6 @@ jobs:
             pkill screen
             rm -rf shusher-latest
             mv temp/shusher-latest shusher-latest
-            cd shusher-latest/web-app
-            npm run start
+            cd shusher-latest/web-app 
+            screen -dmS shusher
+            screen -S shusher -X stuff 'npm run start\n'

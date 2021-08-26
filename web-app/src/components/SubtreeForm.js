@@ -14,8 +14,6 @@ const useStyles = makeStyles((theme) => ({
 
 function SubtreeForm(props) {
 	const classes = useStyles();
-
-	
 	return (
 	<div>
         <TextField
@@ -27,7 +25,6 @@ function SubtreeForm(props) {
             shrink: true,
           }}
 		  onChange={e => props.setValue(e.target.value)}
-
         />
 	</div>
 	);

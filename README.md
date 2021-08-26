@@ -14,11 +14,11 @@
 <!---END_USHER_BADGE-->
  
  ( This project is in active development and is not yet released. )
-  | :computer_mouse:	Access ShUShER <a href="https://shusher.gi.ucsc.edu">here</a>! |
+  | :computer_mouse:	Access ShUShER <a target="_blank" href="https://shusher.gi.ucsc.edu">here</a>! |
 | --- |
 </div>
 <div align="center">
-    ShUShER is a browser tool for placing sensitive genome sequences on phylogenetic trees using <a href="https://github.com/yatisht/usher">UShER</a>.
+    ShUShER is a browser tool for placing sensitive genome sequences on phylogenetic trees using <a target="_blank" href="https://github.com/yatisht/usher">UShER</a>.
   <h3>
     <a href="#usage">
       Usage

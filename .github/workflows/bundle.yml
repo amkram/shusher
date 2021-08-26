@@ -31,15 +31,16 @@ jobs:
         uses: marvinpinto/action-automatic-releases@latest
         with:
           repo_token: ${{ secrets.RELEASE_TOKEN }}
-          automatic_release_tag: "latest"
+          automatic_release_tag: ${{ github.event.inputs.version }}
           prerelease: false
-          title: Latest Release (${{ github.event.inputs.version }})
+          title: ShUShER ${{ github.event.inputs.version }}
           files: usher-port/usher-port-bundle-${{ github.event.inputs.version }}.tar.gz
+
       - name: Release bundle 2
         uses: marvinpinto/action-automatic-releases@latest
         with:
           repo_token: ${{ secrets.RELEASE_TOKEN }}
-          automatic_release_tag: ${{ github.event.inputs.version }}
+          automatic_release_tag: "latest"
           prerelease: false
-          title: ShUShER ${{ github.event.inputs.version }}
+          title: Latest Release (${{ github.event.inputs.version }})
           files: usher-port/usher-port-bundle-${{ github.event.inputs.version }}.tar.gz

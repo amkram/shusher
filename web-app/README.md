@@ -1,1 +1,1 @@
-This is a web app hosting a version of UShER suitable for analysis of sensitive data. User data is not transmitted over the Internet and computation on the data is performed entirely client-side in the web browser.
+This directory contains the React web app that runs the ported version of UShER (`../usher-port`). See the main [README](https://github.com/amkram/shusher/blob/master/README.md) for information on installation and usage.

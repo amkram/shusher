@@ -16,6 +16,7 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             cd /data
+            rm -rf temp/*
             mkdir -p temp
             cd temp
             wget https://github.com/amkram/shusher/archive/refs/tags/latest.tar.gz

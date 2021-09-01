@@ -10,7 +10,7 @@
   
   [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
   [![Integration Tests](https://github.com/amkram/shusher/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/amkram/shusher/actions/workflows/build_and_test.yml)<!---BEGIN_USHER_BADGE-->
-<a target="_blank" href="https://github.com/yatisht/usher/tree/73f3188da212fe8fc4c8c6f145067c14d356d7b9"><img src="https://img.shields.io/badge/UShER%20Version-commit%2073f3188d-%235e0000"/></a>
+<a target="_blank" href="https://github.com/yatisht/usher/tree/282552a180773b62a51cd6faa70d3054b2afd706"><img src="https://img.shields.io/badge/UShER%20Version-commit%20282552a1-%235e0000"/></a>
 <!---END_USHER_BADGE-->
  
   | :computer_mouse:	Access ShUShER <a target="_blank" href="https://shusher.gi.ucsc.edu">here</a>! |

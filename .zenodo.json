@@ -1,0 +1,28 @@
+{
+    "description": "Private, browser-based placement of genome sequences on phylogenetic trees using UShER.", 
+    "license": "other-open", 
+    "title": "amkram/shusher: ShUShER v0.5.0", 
+    "version": "v0.5.0", 
+    "upload_type": "software", 
+    "publication_date": "2021-10-13", 
+    "creators": [
+        {
+            "name": "Alexander Kramer",
+            "name": "Yatish Turakhia",
+            "name": "Russell Corbett-Detig"
+        }
+    ], 
+    "access_right": "open", 
+    "related_identifiers": [
+        {
+            "scheme": "url", 
+            "identifier": "https://github.com/amkram/shusher/tree/v0.5.0", 
+            "relation": "isSupplementTo"
+        }, 
+        {
+            "scheme": "doi", 
+            "identifier": "10.5281/zenodo.5567374", 
+            "relation": "isVersionOf"
+        }
+    ]
+}

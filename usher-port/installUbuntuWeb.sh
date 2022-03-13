@@ -3,14 +3,15 @@
 reference_file_name='GCF_009858895.2_ASM985889v3_genomic.fna'
 
 rm -rf build
+rm -rf web-lib
 mkdir -p web-lib && cd web-lib
 
 # get Emscripten
-wget https://github.com/emscripten-core/emsdk/archive/refs/tags/2.0.21.tar.gz
-tar xzf 2.0.21.tar.gz
-cd emsdk-2.0.21
-./emsdk install 2.0.21
-./emsdk activate 2.0.21
+wget https://github.com/emscripten-core/emsdk/archive/refs/tags/3.1.7.tar.gz
+tar xzf 3.1.7.tar.gz
+cd emsdk-3.1.7
+./emsdk install 3.1.7
+./emsdk activate 3.1.7
 source emsdk_env.sh
 cd ..
 
@@ -86,7 +87,7 @@ elif [[ $1 == "test" ]] ; then
 		-DProtobuf_INCLUDE_DIR=$protobuf_includes -DBoost_LIB_FS=$path_boost_fs -DBoost_LIB_IO=$path_boost_io \
 		-DBoost_LIB_PO=$path_boost_po -DBoost_LIB_ZLIB=$path_boost_zlib \
 		-DTBB_LIB_TBB=$path_tbb -DTBB_LIB_TBBMALLOC=$path_tbbmalloc -DTBB_LIB_TBBMALLOC_PROXY=$path_tbbmalloc_proxy \
-		-DProtobuf_LIBRARIES=$protobuf_libraries -DPre_JS=$pre_js -DPre_Reference=$reference_file_name ..
+		-DProtobuf_LIBRARIES=$protobuf_libraries -DPre_JS=$pre_js -DPre_Reference=$reference_file_name "-DCMAKE_EXE_LINKER_FLAGS=-s LLD_REPORT_UNDEFINED" ..
 fi
 
 

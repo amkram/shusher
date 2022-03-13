@@ -42,6 +42,7 @@ add_executable(usher
     src/mutation_annotated_tree.cpp
     src/usher_mapper.cpp
     src/usher.cpp
+    src/usher_common.cpp
     ${PROTO_SRCS}
     ${PROTO_HDRS}
     )

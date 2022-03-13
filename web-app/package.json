@@ -14,7 +14,8 @@
     "start": "auspice view --verbose --handlers ./src/vendor/auspice.us/handlers.js",
     "develop": "auspice develop --verbose --extend ./src/pages/auspice-config.json"
   },
-  "dependencies": { "@material-ui/core": "^4.11.4",
+  "dependencies": {
+    "@material-ui/core": "^4.11.4",
     "@material-ui/icons": "^4.11.2",
     "@material-ui/lab": "^4.0.0-alpha.58",
     "auspice": "2.23.0",

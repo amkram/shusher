@@ -29,7 +29,14 @@ std::string build_reference(std::ifstream &fasta_file) {
     return reference_output;
 }
 
-
+char complement(char nt) {
+    auto it = complement_map.find(nt);
+    if (it == complement_map.end()) {
+        return 'N'; // ambiguous, couldn't resolve nt
+    } else {
+        return it->second;
+    }
+}
 
 // Maps a genomic coordinate to a list of codons it is part of
 std::unordered_map<int, std::vector<std::shared_ptr<Codon>>> build_codon_map(std::ifstream &gtf_file, std::string reference) {
@@ -37,10 +44,14 @@ std::unordered_map<int, std::vector<std::shared_ptr<Codon>>> build_codon_map(std
     std::string gtf_line;
     std::vector<std::string> gtf_lines;
     std::vector<std::string> done;
+
     while (std::getline(gtf_file, gtf_line)) {
         gtf_lines.push_back(gtf_line);
     }
+    int curr_line = -1;
     for (std::string line_outer : gtf_lines) {
+        curr_line += 1;
+
         if (line_outer[0] == '#' || line_outer[0] == '\n') {
             continue;
         }
@@ -54,6 +65,7 @@ std::unordered_map<int, std::vector<std::shared_ptr<Codon>>> build_codon_map(std
         }
         std::string feature_outer = split_line_outer[2];
         std::string gene_outer = split(split(split_line_outer[8], '\"')[1], '\"')[0];
+        char strand_outer = split_line_outer[6][0];
 
         if (feature_outer == "CDS") {
             bool found = (std::find(done.begin(), done.end(), gene_outer) != done.end());
@@ -66,77 +78,155 @@ std::unordered_map<int, std::vector<std::shared_ptr<Codon>>> build_codon_map(std
             int first_cds_start = std::stoi(split_line_outer[3]); // expect the GTF is ordered by start position
             int first_cds_stop = std::stoi(split_line_outer[4]);
             int codon_counter = 0; // the number of codons we have added so far
-            for (int pos = first_cds_start - 1; pos < first_cds_stop; pos += 3) {
+            if (strand_outer == '+') {
+                for (int pos = first_cds_start - 1; pos < first_cds_stop; pos += 3) {
 
-                char nt[3] = {
-                    reference[pos],
-                    reference[pos+1],
-                    reference[pos+2]
-                };
+                    char nt[3] = {
+                        reference[pos],
+                        reference[pos+1],
+                        reference[pos+2]
+                    };
 
-                // Coordinates are 0-based at this point
-                std::shared_ptr<Codon> c(new Codon(gene_outer, codon_counter, pos, nt));
-                codon_counter += 1;
+                    // Coordinates are 0-based at this point
+                    std::shared_ptr<Codon> c(new Codon(gene_outer, codon_counter, pos, nt));
+                    codon_counter += 1;
 
-                // The current pos and the next positions
-                // are associated with this codon
-                auto it = codon_map.find(pos);
-                if (it == codon_map.end()) {
-                    codon_map.insert({pos, {c}});
-                } else {
-                    (it->second).push_back(c);
+                    // The current pos and the next positions
+                    // are associated with this codon
+                    auto it = codon_map.find(pos);
+                    if (it == codon_map.end()) {
+                        codon_map.insert({pos, {c}});
+                    } else {
+                        (it->second).push_back(c);
+                    }
+
+                    it = codon_map.find(pos+1);
+                    if (it == codon_map.end()) {
+                        codon_map.insert({pos+1, {c}});
+                    } else {
+                        (it->second).push_back(c);
+                    }
+
+                    it = codon_map.find(pos+2);
+                    if (it == codon_map.end()) {
+                        codon_map.insert({pos+2, {c}});
+                    } else {
+                        (it->second).push_back(c);
+                    }
                 }
+            } else {
+                for (int pos = first_cds_stop - 1; pos > first_cds_start; pos -= 3) {
 
-                it = codon_map.find(pos+1);
-                if (it == codon_map.end()) {
-                    codon_map.insert({pos+1, {c}});
-                } else {
-                    (it->second).push_back(c);
-                }
+                    char nt[3] = {
+                        complement(reference[pos]),
+                        complement(reference[pos-1]),
+                        complement(reference[pos-2])
+                    };
 
-                it = codon_map.find(pos+2);
-                if (it == codon_map.end()) {
-                    codon_map.insert({pos+2, {c}});
-                } else {
-                    (it->second).push_back(c);
+                    // Coordinates are 0-based at this point
+                    std::shared_ptr<Codon> c(new Codon(gene_outer, codon_counter, pos, nt));
+                    codon_counter += 1;
+
+                    // The current pos and the next positions
+                    // are associated with this codon
+                    auto it = codon_map.find(pos);
+                    if (it == codon_map.end()) {
+                        codon_map.insert({pos, {c}});
+                    } else {
+                        (it->second).push_back(c);
+                    }
+
+                    it = codon_map.find(pos-1);
+                    if (it == codon_map.end()) {
+                        codon_map.insert({pos-1, {c}});
+                    } else {
+                        (it->second).push_back(c);
+                    }
+
+                    it = codon_map.find(pos-2);
+                    if (it == codon_map.end()) {
+                        codon_map.insert({pos-2, {c}});
+                    } else {
+                        (it->second).push_back(c);
+                    }
                 }
             }
             for (std::string line_inner : gtf_lines) { // find the rest of the CDS features, assuming they are in position order
+
+                if (line_inner[0] == '#' || line_inner[0] == '\n') {
+                    continue;
+                }
                 std::vector<std::string> split_line_inner = split(line_inner, '\t');
                 std::string feature_inner = split_line_inner[2];
                 std::string gene_inner = split(split(split_line_inner[8], '\"')[1], '\"')[0];
                 if (feature_inner == "CDS" && gene_outer == gene_inner) {
                     int inner_cds_start = std::stoi(split_line_inner[3]);
                     int inner_cds_stop = std::stoi(split_line_inner[4]);
-                    if (inner_cds_start != first_cds_start) {
-                        for (int pos = inner_cds_start - 1; pos < inner_cds_stop; pos += 3) {
-                            char nt[3] = {
-                                reference[pos],
-                                reference[pos+1],
-                                reference[pos+2]
-                            };
-                            std::shared_ptr<Codon> c(new Codon(gene_outer, codon_counter, pos, nt));
-                            codon_counter += 1;
+                    char strand_inner = split_line_inner[6][0];
+                    if (strand_inner == '+') {
+                        if (inner_cds_start != first_cds_start || strand_outer != strand_inner) {
+                            for (int pos = inner_cds_start - 1; pos < inner_cds_stop; pos += 3) {
+                                char nt[3] = {
+                                    reference[pos],
+                                    reference[pos+1],
+                                    reference[pos+2]
+                                };
+                                std::shared_ptr<Codon> c(new Codon(gene_outer, codon_counter, pos, nt));
+                                codon_counter += 1;
 
-                            auto it = codon_map.find(pos);
-                            if (it == codon_map.end()) {
-                                codon_map.insert({pos, {c}});
-                            } else {
-                                (it->second).push_back(c);
+                                auto it = codon_map.find(pos);
+                                if (it == codon_map.end()) {
+                                    codon_map.insert({pos, {c}});
+                                } else {
+                                    (it->second).push_back(c);
+                                }
+
+                                it = codon_map.find(pos+1);
+                                if (it == codon_map.end()) {
+                                    codon_map.insert({pos+1, {c}});
+                                } else {
+                                    (it->second).push_back(c);
+                                }
+
+                                it = codon_map.find(pos+2);
+                                if (it == codon_map.end()) {
+                                    codon_map.insert({pos+2, {c}});
+                                } else {
+                                    (it->second).push_back(c);
+                                }
                             }
+                        }
+                    } else {
+                        if (inner_cds_start != first_cds_start || strand_outer != strand_inner) {
+                            for (int pos = inner_cds_stop - 1; pos > inner_cds_start; pos -= 3) {
+                                char nt[3] = {
+                                    complement(reference[pos]),
+                                    complement(reference[pos-1]),
+                                    complement(reference[pos-2])
+                                };
+                                std::shared_ptr<Codon> c(new Codon(gene_outer, codon_counter, pos, nt));
+                                codon_counter += 1;
 
-                            it = codon_map.find(pos+1);
-                            if (it == codon_map.end()) {
-                                codon_map.insert({pos+1, {c}});
-                            } else {
-                                (it->second).push_back(c);
-                            }
+                                auto it = codon_map.find(pos);
+                                if (it == codon_map.end()) {
+                                    codon_map.insert({pos, {c}});
+                                } else {
+                                    (it->second).push_back(c);
+                                }
 
-                            it = codon_map.find(pos+2);
-                            if (it == codon_map.end()) {
-                                codon_map.insert({pos+2, {c}});
-                            } else {
-                                (it->second).push_back(c);
+                                it = codon_map.find(pos-1);
+                                if (it == codon_map.end()) {
+                                    codon_map.insert({pos-1, {c}});
+                                } else {
+                                    (it->second).push_back(c);
+                                }
+
+                                it = codon_map.find(pos-2);
+                                if (it == codon_map.end()) {
+                                    codon_map.insert({pos-2, {c}});
+                                } else {
+                                    (it->second).push_back(c);
+                                }
                             }
                         }
                     }
@@ -170,7 +260,7 @@ void translate_main(MAT::Tree *T, std::string output_filename, std::string gtf_f
 
     std::string reference = build_reference(fasta_file);
 
-    output_file << "node_id\taa_mutations\tnt_mutations\tleaves_sharing_mutations" << '\n';
+    output_file << "node_id\taa_mutations\tnt_mutations\tcodon_changes\tleaves_sharing_mutations" << '\n';
 
     // This maps each position in the reference to a vector of codons.
     // Some positions may be associated with multiple codons (frame shifts).
@@ -202,7 +292,7 @@ void translate_main(MAT::Tree *T, std::string output_filename, std::string gtf_f
 }
 
 // This is used for taxodium output. It translates each node and saves metadata to node_data along the way
-void translate_and_populate_node_data(MAT::Tree *T, std::string gtf_filename, std::string fasta_filename, Taxodium::AllNodeData *node_data, Taxodium::AllData *all_data, std::unordered_map<std::string, std::vector<std::string>> &metadata, MetaColumns fixed_columns, std::vector<GenericMetadata> &generic_metadata) {
+void translate_and_populate_node_data(MAT::Tree *T, std::string gtf_filename, std::string fasta_filename, Taxodium::AllNodeData *node_data, Taxodium::AllData *all_data, std::unordered_map<std::string, std::vector<std::string>> &metadata, MetaColumns fixed_columns, std::vector<GenericMetadata> &generic_metadata, float x_scale, bool include_nt) {
     std::ifstream fasta_file(fasta_filename);
     if (!fasta_file) {
         fprintf(stderr, "ERROR: Could not open the fasta file: %s!\n", fasta_filename.c_str());
@@ -260,20 +350,30 @@ void translate_and_populate_node_data(MAT::Tree *T, std::string gtf_filename, st
         }
         branch_length_map[node->identifier] = curr_x_value;
 
+        // First collect (syn and nonsyn) nucleotide mutations with a fake gene called nt
+        std::string mutation_result = "";
+        if (include_nt) {
+            for (auto m : node->mutations) {
+                mutation_result += "nt:";
+                mutation_result += MAT::get_nuc(m.par_nuc);
+                mutation_result +=  "_" + std::to_string(m.position) + "_";
+                mutation_result += MAT::get_nuc(m.mut_nuc);
+                mutation_result +=  ";";
+            }
+        }
         // Do mutations
         Taxodium::MutationList *mutation_list = node_data->add_mutations();
-        std::string mutation_result = "";
 
         // This string is a semicolon separated list of mutations in format
         // [orf]:[orig aa]_[orf num]_[new aa]
         // e.g. S:K_200_V;ORF1a:G_240_N
-        mutation_result = do_mutations(node->mutations, codon_map, true);
+        mutation_result += do_mutations(node->mutations, codon_map, true);
 
 
         if (node->is_root()) {
             // For the root node, modify mutation_result with "fake" mutations,
             // to enable correct coloring by amino acid in Taxodium
-            std::unordered_map<std::string, bool> done_codons = {}; // some codons are duplicated in codon_map, track them 
+            std::unordered_map<std::string, bool> done_codons = {}; // some codons are duplicated in codon_map, track them
             std::string root_mutations = ""; // add "mutations" at the root
             for (int32_t pos = 0; pos < (int32_t) reference.length(); pos++) {
                 if (codon_map.find(pos) == codon_map.end()) {
@@ -304,7 +404,7 @@ void translate_and_populate_node_data(MAT::Tree *T, std::string gtf_filename, st
             }
         }
 
-        node_data->add_x(branch_length_map[node->identifier] * 0.2);
+        node_data->add_x(branch_length_map[node->identifier] * x_scale);
         node_data->add_y(0); // temp value, set later
         node_data->add_epi_isl_numbers(0); // not currently set
         node_data->add_num_tips(T->get_leaves(node->identifier).size());
@@ -321,7 +421,7 @@ void translate_and_populate_node_data(MAT::Tree *T, std::string gtf_filename, st
             for (const auto &m : generic_metadata) {
                 m.protobuf_data_ptr->add_node_values(0); // no metadata for this node
             }
-        } else if (metadata.find(node->identifier) == metadata.end()) { 
+        } else if (metadata.find(node->identifier) == metadata.end()) {
             node_data->add_names(split(node->identifier, '|')[0]);
 
             if (fixed_columns.date_column > -1) {
@@ -333,7 +433,7 @@ void translate_and_populate_node_data(MAT::Tree *T, std::string gtf_filename, st
             for (const auto &m : generic_metadata) {
                 m.protobuf_data_ptr->add_node_values(0); // no metadata for this node
             }
-        
+
         } else {
 
             // All of the metadata values (integer-encoded for those with mappings) for the current node
@@ -398,13 +498,16 @@ void translate_and_populate_node_data(MAT::Tree *T, std::string gtf_filename, st
 std::string do_mutations(std::vector<MAT::Mutation> &mutations, std::unordered_map<int, std::vector<std::shared_ptr<Codon>>> &codon_map, bool taxodium_format) {
     std::string prot_string = "";
     std::string nuc_string = "";
+    std::string cchange_string = "";
     std::sort(mutations.begin(), mutations.end());
     std::unordered_map<std::string, std::set<MAT::Mutation>> codon_to_nt_map;
+    std::unordered_map<std::string, std::string> codon_to_changestring_map;
     std::unordered_map<std::string, char> orig_proteins;
     std::vector<std::shared_ptr<Codon>> affected_codons;
 
     for (auto &m : mutations) {
         char mutated_nuc = MAT::get_nuc(m.mut_nuc);
+        char par_nuc = MAT::get_nuc(m.par_nuc);
         int pos = m.position - 1;
         auto codon_map_it = codon_map.find(pos);
         if (codon_map_it == codon_map.end()) {
@@ -413,6 +516,8 @@ std::string do_mutations(std::vector<MAT::Mutation> &mutations, std::unordered_m
             // Mutate each codon associated with this position
             for (auto codon_ptr : codon_map_it->second) {
                 std::string codon_id = codon_ptr->orf_name + ':' + std::to_string(codon_ptr->codon_number+1);
+                //first, update the codon to match the parent state instead of the reference state as part of the codon output
+                codon_ptr->mutate(pos, par_nuc);
                 auto orig_it = orig_proteins.find(codon_id);
                 if (orig_it == orig_proteins.end()) {
                     orig_proteins.insert({codon_id, codon_ptr->protein});
@@ -420,7 +525,13 @@ std::string do_mutations(std::vector<MAT::Mutation> &mutations, std::unordered_m
                 if (std::find(affected_codons.begin(), affected_codons.end(), codon_ptr) == affected_codons.end()) {
                     affected_codons.push_back(codon_ptr);
                 }
+                std::string original_codon = codon_ptr->nucleotides;
+                //then update it again to match the mutated state
                 codon_ptr->mutate(pos, mutated_nuc);
+                // store a string representing the original and new codons in nucleotides
+                // this may incorporate multiple nucleotide mutations, just accounting for the original and end states.
+                std::string changestring = original_codon + ">" + codon_ptr->nucleotides;
+                codon_to_changestring_map.insert({codon_id, changestring});
                 // Build a map of codons and their associated nt mutations
                 auto to_nt_it = codon_to_nt_map.find(codon_id);
                 if (to_nt_it == codon_to_nt_map.end()) {
@@ -452,6 +563,8 @@ std::string do_mutations(std::vector<MAT::Mutation> &mutations, std::unordered_m
             nuc_string.resize(nuc_string.length() - 1); // remove trailing ','
             nuc_string += ';';
         }
+        std::string changestring = codon_to_changestring_map.find(codon_id)->second;
+        cchange_string += changestring + ";";
     }
 
     if (!nuc_string.empty() && nuc_string.back() == ';') {
@@ -460,12 +573,15 @@ std::string do_mutations(std::vector<MAT::Mutation> &mutations, std::unordered_m
     if (!prot_string.empty() && prot_string.back() == ';') {
         prot_string.resize(prot_string.length() - 1); //remove trailing ';'
     }
-    if (nuc_string.empty() || prot_string.empty()) {
+    if (!cchange_string.empty() && cchange_string.back() == ';') {
+        cchange_string.resize(cchange_string.length() - 1); //remove trailing ';'
+    }
+    if (nuc_string.empty() || prot_string.empty() || cchange_string.empty()) {
         return "";
     } else if(taxodium_format) { // format string for taxodium pb
         return prot_string;
     } else { // format string for TSV output
-        return prot_string + '\t' + nuc_string;
+        return prot_string + '\t' + nuc_string + '\t' + cchange_string;
     }
 }
 

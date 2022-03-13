@@ -19,7 +19,7 @@ po::variables_map parse_summary_command(po::parsed_options parsed) {
     ("output-directory,d", po::value<std::string>()->default_value("./"),
      "Write output files to the target directory. Default is current directory.")
     ("samples,s", po::value<std::string>()->default_value(""),
-     "Write a tsv listing all samples in the tree and their parsimony score (terminal branch length).")
+     "Write a tsv listing all samples in the tree, their parsimony score (terminal branch length), and the ID of their parent node.")
     ("clades,c", po::value<std::string>()->default_value(""),
      "Write a tsv listing all clades and the (inclusive and exclusive of nested clades) count of associated samples.")
     ("sample-clades,C", po::value<std::string>()->default_value(""),
@@ -29,13 +29,13 @@ po::variables_map parse_summary_command(po::parsed_options parsed) {
     ("translate,t", po::value<std::string>()->default_value(""),
      "Write a tsv listing the amino acid and nucleotide mutations at each node.")
     ("aberrant,a", po::value<std::string>()->default_value(""),
-     "Write a tsv listing duplicate samples and internal nodes with no mutations and/or branch length 0.")
+     "Write a tsv listing duplicate sample identifiers and internal nodes with no mutations and/or branch length 0.")
     ("haplotype,H", po::value<std::string>()->default_value(""),
      "Write a tsv listing haplotypes represented by comma-delimited sets of mutations and their total frequency across the tree.")
     ("calculate-roho,R", po::value<std::string>()->default_value(""),
      "Write a tsv containing the distribution of RoHO values calculated for all homoplasic mutations.")
-    ("get-all,A", po::bool_switch(),
-     "Use default filenames (samples.txt, clades.txt, etc) and save all summary tables to the output directory.")
+    ("get-all-basic,A", po::bool_switch(),
+     "Use default filenames and save samples, clades, mutations, and aberrant summary tables to the output directory.")
     ("threads,T", po::value<uint32_t>()->default_value(num_cores), num_threads_message.c_str())
     ("expanded-roho,E", po::bool_switch(),
      "Use to include date and other contextual information in RoHO table output. Significantly slows calculation time.")
@@ -68,13 +68,13 @@ void write_sample_table(MAT::Tree* T, std::string filename) {
     std::ofstream samplefile;
     samplefile.open(filename);
     //print a quick column header (makes this specific file auspice compatible also!)
-    samplefile << "sample\tparsimony\n";
+    samplefile << "sample\tparsimony\tparent_id\n";
 
     auto dfs = T->depth_first_expansion();
     for (auto s: dfs) {
         if (s->is_leaf()) {
             //leaves are samples (on the uncondensed tree)
-            samplefile << s->identifier << "\t" << s->mutations.size() << "\n";
+            samplefile << s->identifier << "\t" << s->mutations.size() << "\t" << s->parent->identifier << "\n";
         }
     }
     fprintf(stderr, "Completed in %ld msec \n\n", timer.Stop());
@@ -174,12 +174,7 @@ void write_translate_table(MAT::Tree* T, std::string output_filename, std::strin
     fprintf(stderr, "Completed in %ld msec \n\n", timer.Stop());
 }
 
-void write_haplotype_table(MAT::Tree* T, std::string filename) {
-    timer.Start();
-    fprintf(stderr, "Writing haplotype frequencies to output %s\n", filename.c_str());
-    std::ofstream hapfile;
-    hapfile.open(filename);
-    hapfile << "mutation_set\tsample_count\n";
+std::map<std::set<std::string>,size_t> count_haplotypes(MAT::Tree* T) {
     std::map<std::set<std::string>,size_t> hapmap;
     //naive method. for each sample, rsearch along the history to collect each of its mutations
     //and add those to the set. At the end, add that set to the hapcount keys if its not there, and increment.
@@ -195,6 +190,16 @@ void write_haplotype_table(MAT::Tree* T, std::string filename) {
         }
         hapmap[mset]++;
     }
+    return hapmap;
+}
+
+void write_haplotype_table(MAT::Tree* T, std::string filename) {
+    timer.Start();
+    fprintf(stderr, "Writing haplotype frequencies to output %s\n", filename.c_str());
+    std::ofstream hapfile;
+    hapfile.open(filename);
+    hapfile << "mutation_set\tsample_count\n";
+    auto hapmap = count_haplotypes(T);
     for (auto const &hapc : hapmap) {
         std::ostringstream msetstr;
         for (auto m: hapc.first) {
@@ -457,7 +462,7 @@ void summary_main(po::parsed_options parsed) {
     std::string roho = dir_prefix + vm["calculate-roho"].as<std::string>();
     std::string hapfile = dir_prefix + vm["haplotype"].as<std::string>();
     uint32_t num_threads = vm["threads"].as<uint32_t>();
-    bool get_all = vm["get-all"].as<bool>();
+    bool get_all = vm["get-all-basic"].as<bool>();
     if (get_all) {
         //if this is set, overwrite with default names for all output
         //and since these names are non-empty, all will be generated
@@ -465,8 +470,6 @@ void summary_main(po::parsed_options parsed) {
         clades = dir_prefix + "clades.tsv";
         mutations = dir_prefix + "mutations.tsv";
         aberrant = dir_prefix + "aberrant.tsv";
-        sample_clades = dir_prefix + "sample-clades.tsv";
-        roho = dir_prefix + "roho-values.tsv";
     }
     tbb::task_scheduler_init init(num_threads);
 
@@ -536,9 +539,15 @@ void summary_main(po::parsed_options parsed) {
         int nodecount = 0;
         int samplecount = 0;
         auto dfs = T.depth_first_expansion();
+        size_t slevel = 0;
+        size_t mlevel = 0;
         for (auto s: dfs) {
             nodecount++;
             if (s->is_leaf()) {
+                slevel += s->level;
+                if (s->level > mlevel) {
+                    mlevel = s->level;
+                }
                 samplecount++;
             }
         }
@@ -548,6 +557,8 @@ void summary_main(po::parsed_options parsed) {
         fprintf(stdout, "Total Samples in Condensed Nodes: %ld\n", num_condensed_leaves);
         fprintf(stdout, "Total Tree Parsimony: %ld\n", T.get_parsimony_score());
         fprintf(stdout, "Number of Clade Annotations: %ld\n", T.get_num_annotations());
+        fprintf(stdout, "Max Tree Depth: %ld\n", mlevel);
+        fprintf(stdout, "Mean Tree Depth: %f\n", static_cast<float>(slevel) / samplecount);
         fprintf(stderr, "Completed in %ld msec \n\n", timer.Stop());
     }
 }

@@ -1,7 +1,9 @@
 #ifndef MUTATION_ANNOTATED_TREE
 #define MUTATION_ANNOTATED_TREE
 #include <algorithm>
+#include <atomic>
 #include <cstddef>
+#include <cstdint>
 #include <mutex>
 #include <sys/types.h>
 #include <unordered_map>
@@ -24,7 +26,6 @@ static uint8_t one_hot_to_two_bit(uint8_t arg) {
 static uint8_t two_bit_to_one_hot(uint8_t arg) {
     return 1<<(arg);
 }
-
 class nuc_one_hot;
 class nuc_2bit {
     uint8_t nuc;
@@ -106,7 +107,8 @@ class Mutation {
     uint8_t chrom_idx;
     uint8_t par_mut_nuc;
     uint8_t boundary1_all_major_allele; //boundary 1 alleles are alleles with allele count one less than major allele count
-    uint8_t child_muts;//left child state then right child state for binary nodes
+    uint8_t decrement_increment_effect;//Decrement which allele will increase parsimony score, then increment which allele may decrease parsimony score
+    //uint8_t child_muts;//left child state then right child state for binary nodes
     static tbb::concurrent_unordered_map<std::string, uint8_t> chromosome_map;
     static std::mutex ref_lock;//reference nuc are stored in a separate vector, need to be locked when adding new mutations
   public:
@@ -115,12 +117,22 @@ class Mutation {
     void set_boundary_one_hot(nuc_one_hot boundary1) {
         boundary1_all_major_allele=(boundary1_all_major_allele&0xf)|(boundary1<<4);
     }
-
+    nuc_one_hot get_sensitive_decrement()const {
+        return decrement_increment_effect>>4;
+    }
+    nuc_one_hot get_sensitive_increment()const {
+        return decrement_increment_effect&0xf;
+    }
+    void set_sensitive_change(nuc_one_hot decrement,nuc_one_hot increment) {
+        decrement_increment_effect=(decrement<<4)|increment;
+    }
     Mutation(const std::string& chromosome,int position,nuc_one_hot mut,nuc_one_hot par,nuc_one_hot tie,nuc_one_hot ref=0);
 
-    Mutation(int pos):position(pos),chrom_idx(0),par_mut_nuc(0),boundary1_all_major_allele(0),child_muts(0) {}
+    Mutation(int pos):position(pos),chrom_idx(0),par_mut_nuc(0),boundary1_all_major_allele(0) {}
 
-    Mutation(uint8_t chrom_idx,int pos,uint8_t par_nuc,uint8_t mut_nuc):position(pos),chrom_idx(chrom_idx),par_mut_nuc((par_nuc<<4)|mut_nuc),boundary1_all_major_allele(mut_nuc),child_muts(mut_nuc|(mut_nuc<<4)) {}
+    Mutation(uint8_t chrom_idx,int pos,uint8_t par_nuc,uint8_t mut_nuc):position(pos),chrom_idx(chrom_idx),par_mut_nuc((par_nuc<<4)|mut_nuc),boundary1_all_major_allele(mut_nuc) {}
+    struct ignored {};
+    Mutation(uint8_t chrom_idx,int pos,uint8_t par_nuc,uint8_t mut_nuc,ignored):position(pos),chrom_idx(chrom_idx),par_mut_nuc((par_nuc<<4)|mut_nuc),boundary1_all_major_allele(0xf) {}
 
     bool same_chrom(const Mutation& other) const {
         return chrom_idx==other.chrom_idx;
@@ -128,19 +140,6 @@ class Mutation {
 
     const std::string& get_chromosome() const {
         return chromosomes[chrom_idx];
-    }
-
-    void set_children(nuc_one_hot boundary1_alleles,nuc_one_hot tie_nuc,nuc_one_hot left_child_state,nuc_one_hot right_child_state) {
-        boundary1_all_major_allele=(boundary1_alleles<<4)|tie_nuc;
-        child_muts=(left_child_state<<4)|right_child_state;
-    }
-
-    uint8_t get_left_child_state()const {
-        return child_muts>>4;
-    }
-
-    uint8_t get_right_child_state()const {
-        return child_muts&0xf;
     }
 
     uint8_t get_chromIdx()const {
@@ -161,7 +160,7 @@ class Mutation {
                 return m;
             }
      */
-    Mutation():position(-1),chrom_idx(0),par_mut_nuc(0),boundary1_all_major_allele(0),child_muts(0) {
+    Mutation():position(-1),chrom_idx(0),par_mut_nuc(0),boundary1_all_major_allele(0) {
     }
 
     nuc_one_hot get_ref_one_hot() const {
@@ -369,8 +368,16 @@ class Mutations_Collection {
         return true;
     }
 };
-
+typedef std::vector<std::pair<int,int>> ignored_t;
 class Node {
+#ifdef LOAD
+  public:
+#endif
+    std::atomic_uint8_t changed;
+    static const uint8_t SELF_CHANGED_MASK=1;
+    static const uint8_t ANCESTOR_CHANGED_MASK=2;
+    static const uint8_t DESCENDENT_CHANGED_MASK=4;
+    static const uint8_t SELF_MOVED_MASK=8;
   public:
     float branch_length;
     std::string identifier;
@@ -378,12 +385,13 @@ class Node {
     Node* parent;
     std::vector<Node*> children;
     Mutations_Collection mutations;
+    ignored_t ignore;
     //Mutations_Collection boundary_mutations;
     size_t dfs_index; //index in dfs pre-order
     size_t dfs_end_index; //index in dfs pre-order
     size_t bfs_index; //index in bfs
-    size_t last_searched_arcs;
-    bool to_search;
+    size_t level;
+    //size_t last_searched_arcs;
     bool have_masked;
     bool is_leaf() const;
     bool is_root();
@@ -395,6 +403,36 @@ class Node {
     bool add_mutation(Mutation& mut) {
         return mutations.insert(mut,Mutations_Collection::KEEP_OTHER);
     }
+    void set_self_changed() {
+        changed|=SELF_CHANGED_MASK;
+    }
+    void set_ancestor_changed() {
+        changed|=ANCESTOR_CHANGED_MASK;
+    }
+    void set_descendent_changed() {
+        changed|=DESCENDENT_CHANGED_MASK;
+    }
+    void set_self_moved() {
+        changed|=SELF_MOVED_MASK;
+    }
+    void clear_changed() {
+        changed=0;
+    }
+    bool get_self_changed() const {
+        return (changed&SELF_CHANGED_MASK);
+    }
+    bool get_ancestor_changed() const {
+        return (changed&ANCESTOR_CHANGED_MASK);
+    }
+    bool get_descendent_changed()const {
+        return (changed&DESCENDENT_CHANGED_MASK);
+    }
+    bool get_self_moved()const {
+        return changed&SELF_MOVED_MASK;
+    }
+    bool have_change_in_neighbor()const {
+        return changed;
+    }
     void clear_mutations() {
         mutations.clear();
     }
@@ -404,6 +442,7 @@ class Node {
     bool no_valid_mutation()const {
         return mutations.no_valid_mutation();
     }
+    void populate_ignored_range();
     //refill mutation with the option of filtering invalid mutations
     template<typename iter_t>
     void refill(iter_t begin,iter_t end,size_t size=0,bool retain_invalid=true) {
@@ -469,8 +508,12 @@ class Tree {
     void load_from_newick(const std::string& newick_string,bool use_internal_node_label=false);
     void condense_leaves(std::vector<std::string> = std::vector<std::string>());
     void uncondense_leaves();
+    std::vector<Node*> get_leaves() const;
+    void populate_ignored_range();
     size_t get_max_level();
     friend class Node;
+    void MPI_send_tree() const;
+    void MPI_receive_tree();
     void delete_nodes();
 };
 

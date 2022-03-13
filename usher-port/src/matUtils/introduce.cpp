@@ -20,7 +20,7 @@ po::variables_map parse_introduce_command(po::parsed_options parsed) {
      "Set to optionally record, for each clade root in the tree, the support for that clade root being IN each region in the input, as a tsv with the indicated name.")
     ("date-metadata,M", po::value<std::string>()->default_value(""),
      "Pass a TSV or CSV containing a 'date' column to use for date information. If not used, date will be inferred from the sample name where possible.")
-    ("full-output,o", po::value<std::string>()->required(),
+    ("full-output,o", po::value<std::string>()->default_value(""),
      "Name of the file to save by-sample introduction information to.")
     ("origin-confidence,C", po::value<float>()->default_value(0.5),
      "Set the threshold for recording of putative origins of introductions. Default is 0.5")
@@ -38,6 +38,10 @@ po::variables_map parse_introduce_command(po::parsed_options parsed) {
      "Report the top r potential origins for any given cluster from a region in multi-region mode. Set to 0 to report as many as possible.")
     ("minimum-to-report,R", po::value<float>()->default_value(0.05),
      "Set to never report origins below the indicated confidence value. Default 0.05.")
+    ("num-to-look,X", po::value<size_t>()->default_value(0),
+     "Called introduction nodes must have this many nodes forward to root with lower confidences. Set to higher integers to merge nested clusters. Default 0")
+    ("minimum-gap,G", po::value<size_t>()->default_value(0),
+     "The minimum number of mutations between the last ancestor inferred to be in region to its parent to use the ancestor to define the cluster instead of the parent. Set to higher values to merge sibling clusters. Default 0.")
     ("threads,T", po::value<uint32_t>(&num_threads)->default_value(num_cores), num_threads_message.c_str())
     ("help,h", "Print help messages");
     // Collect all the unrecognized options from the first pass. This will include the
@@ -62,8 +66,8 @@ po::variables_map parse_introduce_command(po::parsed_options parsed) {
     return vm;
 }
 
-std::map<std::string, std::vector<std::string>> read_two_column (std::string sample_filename) {
-    std::map<std::string, std::vector<std::string>> amap;
+std::unordered_map<std::string, std::vector<std::string>> read_two_column (std::string sample_filename) {
+    std::unordered_map<std::string, std::vector<std::string>> amap;
     //this variant on a sample reader can optionally parse a second column of values
     //because this is handling multiple vectors, it takes vector pointers instead of defining its own and returning them
     std::ifstream infile(sample_filename);
@@ -74,7 +78,7 @@ std::map<std::string, std::vector<std::string>> read_two_column (std::string sam
     std::string line;
     while (std::getline(infile, line)) {
         std::vector<std::string> words;
-        MAT::string_split(line, words);
+        MAT::string_split(line, '\t', words);
 
         std::string sname = words[0];
         std::string rname;
@@ -100,7 +104,7 @@ std::map<std::string, std::vector<std::string>> read_two_column (std::string sam
     return amap;
 }
 
-float get_association_index(MAT::Tree* T, std::map<std::string, float> assignments, bool permute, MAT::Node* subroot) {
+float get_association_index(MAT::Tree* T, std::unordered_map<std::string, float> assignments, bool permute, MAT::Node* subroot) {
     /*
     The association index was introduced by Wang et al 2005 for the estimation of phylogeny and trait correlation. Parker et al 2008 has a good summary.
     It's an index that is small for strong correlation and large for weak correlation, with non-integer values.
@@ -120,7 +124,7 @@ float get_association_index(MAT::Tree* T, std::map<std::string, float> assignmen
     */
     //timer.Start();
     float total_ai = 0.0;
-    std::map<std::string,std::pair<size_t,size_t>> internal_tracker;
+    std::unordered_map<std::string,std::pair<size_t,size_t>> internal_tracker;
     std::vector<MAT::Node*> bfs;
     if (subroot != NULL) {
         bfs = T->breadth_first_expansion(subroot->identifier);
@@ -192,7 +196,7 @@ float get_association_index(MAT::Tree* T, std::map<std::string, float> assignmen
     return total_ai;
 }
 
-size_t get_monophyletic_cladesize(MAT::Tree* T, std::map<std::string, float> assignments, MAT::Node* subroot) {
+size_t get_monophyletic_cladesize(MAT::Tree* T, std::unordered_map<std::string, float> assignments, MAT::Node* subroot) {
     /*
     The monophyletic clade statistic was introduced by Salemi et al 2005. Parker et al 2008 has a good summary.
     MC is bigger for strong correlations, bounded 1 to N where N is the number of samples in the subtree.
@@ -230,7 +234,7 @@ size_t get_monophyletic_cladesize(MAT::Tree* T, std::map<std::string, float> ass
     return biggest;
 }
 
-void record_clade_regions(MAT::Tree* T, std::map<std::string, std::map<std::string, float>> region_assignments, std::string filename) {
+void record_clade_regions(MAT::Tree* T, std::unordered_map<std::string, std::unordered_map<std::string, float>> region_assignments, std::string filename) {
     //record a tsv with a column for each annotated region (single will have label default)
     //and a row for each clade label. The contents are the assignment support for that specific clade root being IN the indicated region
     std::ofstream of;
@@ -262,7 +266,7 @@ void record_clade_regions(MAT::Tree* T, std::map<std::string, std::map<std::stri
     }
 }
 
-std::map<std::string, float> get_assignments(MAT::Tree* T, std::unordered_set<std::string> sample_set, bool eval_uncertainty) {
+std::unordered_map<std::string, float> get_assignments(MAT::Tree* T, std::unordered_set<std::string> sample_set, bool eval_uncertainty) {
     /*
     This function applies a heuristic series of steps to label internal nodes as in or out of a geographic area
     based on their relationship to the samples in the input list. The rules are:
@@ -277,9 +281,11 @@ std::map<std::string, float> get_assignments(MAT::Tree* T, std::unordered_set<st
     Introductions are identified as locations where assignments in an rsearch from an IN sample shift from IN to OUT.
     */
 
-    std::map<std::string, float> assignments;
-    auto dfs = T->depth_first_expansion();
-    for (auto n: dfs) {
+    std::unordered_map<std::string, float> assignments;
+    std::unordered_map<std::string, size_t[4]> stored_params;
+    auto bfs = T->breadth_first_expansion();
+    std::reverse(bfs.begin(), bfs.end());
+    for (auto n: bfs) {
         if (n->is_leaf()) {
             //rule 1
             if (sample_set.find(n->identifier) != sample_set.end()) {
@@ -288,89 +294,74 @@ std::map<std::string, float> get_assignments(MAT::Tree* T, std::unordered_set<st
                 assignments[n->identifier] = 0;
             }
         } else {
-            auto leaves = T->get_leaves_ids(n->identifier);
-            //to apply rules 2-3, we need to check the state of each leaf
-            std::unordered_set<std::string> in_leaves;
-            std::unordered_set<std::string> out_leaves;
-            for (auto l: leaves) {
-                if (sample_set.find(l) != sample_set.end()) {
-                    in_leaves.insert(l);
-                } else {
-                    out_leaves.insert(l);
-                }
-            }
-            if (out_leaves.size() == 0) {
-                //rule 2
-                assignments[n->identifier] = 1;
-            } else if (in_leaves.size() == 0) {
-                //rule 3
-                assignments[n->identifier] = 0;
-            } else {
-                //rule 4...
-                //the best way to do this is to keep in mind that the nearest descendent leaf
-                //is going to be the next leaf encountered in DFS order
-                //so we're going to iterate over DFS until we encounter a leaf of each type and record those distances
-                size_t min_to_in = 0;
-                size_t min_to_out = 0;
-                for (auto d: T->depth_first_expansion(n)) {
-                    if ((min_to_in > 0) & (min_to_out > 0)) {
-                        //if both of these are assigned, we're done. break out of this loop and move on
-                        break;
+            size_t in_leaves = 0;
+            size_t out_leaves = 0;
+            //initialize these at large numbers.
+            size_t min_to_in = 10000000;
+            size_t min_to_out = 10000000;
+            for (auto c: n->children) {
+                if (!c->is_leaf()) {
+                    //this should be present in the stored_params map, if traversal is working correctly
+                    auto search = stored_params.find(c->identifier);
+                    if (search != stored_params.end()) {
+                        in_leaves += search->second[0];
+                        out_leaves += search->second[1];
+                        if (search->second[2] + c->mutations.size() < min_to_in) {
+                            min_to_in = search->second[2] + c->mutations.size();
+                        }
+                        if (search->second[3] + c->mutations.size() < min_to_out) {
+                            min_to_out = search->second[3] + c->mutations.size();
+                        }
+                    } else {
+                        fprintf(stderr, "ERROR: traversal order failure, stored data unavailable\n");
+                        exit(1);
                     }
-                    if (d->is_leaf()) {
-                        if ((sample_set.find(d->identifier) != sample_set.end()) & (min_to_in == 0)) {
-                            //found the nearest IN.
-                            //rsearch back from it so that we're getting the direct path to the original node
-                            //maybe there's a better way to do this, but I want to make sure I'm not including side branches
-                            //on my iteration
-                            size_t total_traveled = 0;
-                            for (auto a: T->rsearch(d->identifier, true)) {
-                                total_traveled += a->mutations.size();
-                                if (a->identifier == n->identifier) {
-                                    //back to the original query, break here
-                                    min_to_in = total_traveled;
-                                    break;
-                                }
-                            }
-                        } else if ((sample_set.find(d->identifier) == sample_set.end()) & (min_to_out == 0)) {
-                            //found the nearest out
-                            //same routine as above
-                            size_t total_traveled = 0;
-                            for (auto a: T->rsearch(d->identifier, true)) {
-                                total_traveled += a->mutations.size();
-                                if (a->identifier == n->identifier) {
-                                    //back to the original query, break here
-                                    min_to_out = total_traveled;
-                                    break;
-                                }
-                            }
+                } else {
+                    if (sample_set.find(c->identifier) != sample_set.end()) {
+                        in_leaves++;
+                        if (c->mutations.size() < min_to_in) {
+                            min_to_in = c->mutations.size();
+                        }
+                    } else {
+                        out_leaves++;
+                        if (c->mutations.size() < min_to_out) {
+                            min_to_out = c->mutations.size();
                         }
                     }
                 }
-                //update to rule 4- 1 is IN, 0 is OUT, but we want to have in-between numbers to represent relative confidence.
+            }
+            stored_params[n->identifier][0] = in_leaves;
+            stored_params[n->identifier][1] = out_leaves;
+            stored_params[n->identifier][2] = min_to_in;
+            stored_params[n->identifier][3] = min_to_out;
+            // fprintf(stderr, "DEBUG: min %ld, mout %ld, ols %ld, ils %ld\n", min_to_in, min_to_out, out_leaves, in_leaves);
+            if (out_leaves == 0) {
+                //rule 2
+                assignments[n->identifier] = 1;
+            } else if (in_leaves == 0) {
+                //rule 3
+                assignments[n->identifier] = 0;
+            } else {
+                //rule 4- 1 is IN, 0 is OUT, but we want to have in-between numbers to represent relative confidence.
                 //we calculate the balance by computing C=1/(1+((OUT_MD/OUT_LEAVES)/(IN_MD/IN_LEAVES)))
                 //C is near 0 when OUT is large, C is near 1 when IN is large, C is 0.5 when they are the same
                 //now we complete rule 4 by checking the balance.
-                //I am getting lazier about tiebreaking with the new method but... oh well.
                 if (min_to_in == 0) {
                     //this calculation is unnecessary in these cases.
                     //tiebreaker for both being 0 is IN with this ordering.
-                    //identical IN sample, its IN.
+                    //identical IN sample, its IN, because logically this ancestor did exist there at that time (just maybe elsewhere also)
                     assignments[n->identifier] = 1;
                 } else if (min_to_out == 0) {
                     assignments[n->identifier] = 0;
                 } else {
-                    // fprintf(stderr, "DEBUG: min %ld, mout %ld, ols %ld, ils %ld\n", min_to_in, min_to_out, out_leaves.size(), in_leaves.size());
-                    //unnecessary variable declarations because I was hitting floating point exceptions.
-                    //float vor = (min_to_out/out_leaves.size());
-                    //float vir = (min_to_in/in_leaves.size());
-                    float vor = (static_cast<float>(min_to_out) / static_cast<float>(out_leaves.size()));
-                    float vir = (static_cast<float>(min_to_in) / static_cast<float>(in_leaves.size()));
+                    //not strictly necessary variable declarations, but makes debugging a bit easier
+                    float vor = (static_cast<float>(min_to_out) / static_cast<float>(out_leaves));
+                    float vir = (static_cast<float>(min_to_in) / static_cast<float>(in_leaves));
                     float r = (vir/vor);
                     float c = (1/(1+r));
                     if (isnan(c)) {
                         fprintf(stderr, "ERROR: Invalid introduction assignment calculation. Debug information follows.\n");
-                        fprintf(stderr, "min %ld, mout %ld, ols %ld, ils %ld,", min_to_in, min_to_out, out_leaves.size(), in_leaves.size());
+                        fprintf(stderr, "min %ld, mout %ld, ols %ld, ils %ld,", min_to_in, min_to_out, out_leaves, in_leaves);
                         fprintf(stderr, " vor %f, vir %f, r %f\n", vor, vir, r);
                         exit(1);
                     }
@@ -400,26 +391,24 @@ std::map<std::string, float> get_assignments(MAT::Tree* T, std::unordered_set<st
     return assignments;
 }
 
-std::pair<boost::gregorian::date,boost::gregorian::date> get_nearest_date(MAT::Tree* T, MAT::Node* n, std::set<std::string>* in_samples, std::map<std::string, std::string> datemeta) {
+std::pair<boost::gregorian::date,boost::gregorian::date> get_nearest_date(MAT::Tree* T, MAT::Node* n, std::set<std::string>* in_samples, std::unordered_map<std::string, std::string> datemeta) {
     boost::gregorian::date earliest = boost::gregorian::day_clock::universal_day();
     boost::gregorian::date latest = boost::gregorian::date(1500,1,1);
     for (auto l: T->get_leaves_ids(n->identifier)) {
         if (in_samples->find(l) != in_samples->end()) {
-            if (datemeta.size() > 0) {
-                if (datemeta.find(l) != datemeta.end()) {
-                    boost::gregorian::date leafdate;
-                    try {
-                        leafdate = boost::gregorian::from_string(datemeta.find(l)->second);
-                    } catch (boost::bad_lexical_cast &e) {
-                        fprintf(stderr, "WARNING: Malformed date %s provided in date file for sample %s; ignoring sample date\n", datemeta.find(l)->second.c_str(), l.c_str());
-                        continue;
-                    }
-                    if (leafdate < earliest) {
-                        earliest = leafdate;
-                    }
-                    if (leafdate > latest) {
-                        latest = leafdate;
-                    }
+            if (datemeta.find(l) != datemeta.end()) {
+                boost::gregorian::date leafdate;
+                try {
+                    leafdate = boost::gregorian::from_string(datemeta.find(l)->second);
+                } catch (boost::bad_lexical_cast &e) {
+                    fprintf(stderr, "WARNING: Malformed date %s provided in date file for sample %s; ignoring sample date\n", datemeta.find(l)->second.c_str(), l.c_str());
+                    continue;
+                }
+                if (leafdate < earliest) {
+                    earliest = leafdate;
+                }
+                if (leafdate > latest) {
+                    latest = leafdate;
                 }
             } else {
                 std::string datend = l.substr(l.rfind("|")+1, std::string::npos);
@@ -433,6 +422,8 @@ std::pair<boost::gregorian::date,boost::gregorian::date> get_nearest_date(MAT::T
                         } else {
                             continue;
                         }
+                    } catch (boost::bad_lexical_cast &e) {
+                        continue;
                     } catch (const std::out_of_range& oor) {
                         continue;
                     }
@@ -452,12 +443,12 @@ std::pair<boost::gregorian::date,boost::gregorian::date> get_nearest_date(MAT::T
     return std::pair<boost::gregorian::date,boost::gregorian::date> (earliest,latest);
 }
 
-std::vector<std::string> find_introductions(MAT::Tree* T, std::map<std::string, std::vector<std::string>> sample_regions, bool add_info, std::string clade_output, float min_origin_confidence, std::string bycluster, std::string dump_assignments, bool eval_uncertainty, std::string earliest_date = "1500/1/1", std::string latest_date = "1500/1/1", std::map<std::string, std::string> datemeta = {}, float minimum_reporting = 0.05, size_t num_to_report = 1) {
+std::vector<std::string> find_introductions(MAT::Tree* T, std::unordered_map<std::string, std::vector<std::string>> sample_regions, bool add_info, std::string clade_output, float min_origin_confidence, std::string bycluster, std::string dump_assignments, bool eval_uncertainty, std::string earliest_date = "1500/1/1", std::string latest_date = "1500/1/1", std::unordered_map<std::string, std::string> datemeta = {}, float minimum_reporting = 0.05, size_t num_to_report = 1, size_t look_ahead = 0, size_t minimum_gap = 0) {
     //for every region, independently assign IN/OUT states
     //and save these assignments into a map of maps
     //so we can check membership of introduction points in each of the other groups
     //this allows us to look for migrant flow between regions
-    std::map<std::string, std::map<std::string, float>> region_assignments;
+    std::unordered_map<std::string, std::unordered_map<std::string, float>> region_assignments;
     boost::gregorian::date recency_filter;
     boost::gregorian::date early_filter;
     std::vector<std::string> bycluster_output;
@@ -473,20 +464,15 @@ std::vector<std::string> find_introductions(MAT::Tree* T, std::map<std::string, 
         fprintf(stderr, "ERROR: Minimum earliest date argument (-L) could not be parsed. Check that it is formatted year-month-day and try again.\n");
         exit(1);
     }
-    //TODO: This could be parallel for a significant speedup when dozens or hundreds of regions are being passed in
     //I also suspect I could use pointers for the assignment maps to make this more memory efficient
     std::vector<std::string> regions ;
     for ( auto r : sample_regions ) regions.push_back( r.first ) ;
     static tbb::affinity_partitioner ap;
     tbb::parallel_for(tbb::blocked_range<size_t>( 0, regions.size() ),
     [&](const tbb::blocked_range<size_t> r) {
-        for ( int l = r.begin() ; l < r.end() ; l ++ ) {
-            //if ( sample_regions[regions[l]].size() < region_minimum ) continue ;
+        for ( size_t l = r.begin() ; l < r.end() ; l ++ ) {
             std::string region = regions[l] ;
             std::vector<std::string> samples = sample_regions[regions[l]] ;
-            //for (auto ms: sample_regions) {
-            //    std::string region = ms.first;
-            //    std::vector<std::string> samples = ms.second;
             fprintf(stderr, "Processing region %s with %ld total samples\n", region.c_str(), samples.size());
             std::unordered_set<std::string> sample_set(samples.begin(), samples.end());
             auto assignments = get_assignments(T, sample_set, eval_uncertainty);
@@ -518,8 +504,8 @@ std::vector<std::string> find_introductions(MAT::Tree* T, std::map<std::string, 
 
     //this structure holds the ID of every node which is 1 in at least one region
     //and all corresponding regions it is 1 for.
-    std::map<std::string, std::vector<float>> region_cons;
-    std::map<std::string, std::vector<std::string>> region_ins;
+    std::unordered_map<std::string, std::vector<float>> region_cons;
+    std::unordered_map<std::string, std::vector<std::string>> region_ins;
     for (auto ra: region_assignments) {
         for (auto ass: ra.second) {
             if (ass.second > minimum_reporting) {
@@ -536,7 +522,11 @@ std::vector<std::string> find_introductions(MAT::Tree* T, std::map<std::string, 
     if (region_assignments.size() > 1) {
         header += "\tregion\torigins\torigins_confidence";
     }
-    header += "\tclades\tmutation_path";
+    size_t nann = T->get_num_annotations();
+    for (size_t i = 1; i <= nann; i++) {
+        header += "\tannotation_" + std::to_string(i);
+    }
+    header += "\tmutation_path";
     if (eval_uncertainty) {
         header += "\tmeta_uncertainty";
     }
@@ -558,10 +548,10 @@ std::vector<std::string> find_introductions(MAT::Tree* T, std::map<std::string, 
         auto assignments = ra.second;
         std::vector<std::string> samples = sample_regions[region];
         std::set<std::string> sampleset (samples.begin(), samples.end());
-        std::map<std::string, size_t> recorded_mc;
-        std::map<std::string, float> recorded_ai;
-        std::map<std::string,std::map<std::string,std::string>> clusters;
-        std::map<std::string,std::string> clustermeta;
+        std::unordered_map<std::string, size_t> recorded_mc;
+        std::unordered_map<std::string, float> recorded_ai;
+        std::unordered_map<std::string,std::unordered_map<std::string,std::string>> clusters;
+        std::unordered_map<std::string,std::string> clustermeta;
         //its time to identify introductions. we're going to do this by iterating
         //over all of the leaves. For each sample, rsearch back until it hits a 0 assignment
         //then record the last encountered 1 assignment as the point of introduction
@@ -571,6 +561,7 @@ std::vector<std::string> find_introductions(MAT::Tree* T, std::map<std::string, 
             //total_processed++;
             //everything in this vector is going to be considered 1 (IN) this region
             std::string last_encountered = s;
+            size_t muts_of_last_encountered = 0;
             MAT::Node* last_node = NULL;
             float last_anc_state = 1;
             auto node = T->get_node(s);
@@ -584,6 +575,7 @@ std::vector<std::string> find_introductions(MAT::Tree* T, std::map<std::string, 
                 if (a->is_root()) {
                     //if we get back to the root, the root is necessarily the point of introduction for this sample
                     last_encountered = a->identifier;
+                    muts_of_last_encountered = a->mutations.size();
                     anc_state = 0;
                 } else {
                     //every node should be in assignments at this point.
@@ -591,6 +583,35 @@ std::vector<std::string> find_introductions(MAT::Tree* T, std::map<std::string, 
                     anc_state = assignments.find(a->identifier)->second;
                 }
                 if (anc_state < min_origin_confidence) {
+                    //adding a new filter routine- looking ahead X nodes along the path to see if any have HIGHER confidence than the
+                    //current node. If not, this node can't be used as the introduction point. Used to merge small subclusters into larger overarching clusters without adjusting the threshold itself.
+                    MAT::Node* cnode;
+                    bool lookahead_skip = false;
+                    if (!a->is_root()) { //filter doesn't apply to roots, of course.
+                        for (size_t i = 0; i < look_ahead; i++) {
+                            cnode = a->parent;
+                            auto cnsc = assignments.find(cnode->identifier);
+                            if (cnsc != assignments.end()) {
+                                if (cnsc->second > anc_state) {
+                                    lookahead_skip = true;
+                                    break;
+                                }
+                            } else {
+                                fprintf(stderr, "DEBUG: Node is missing from assignments\n");
+                            }
+                            if (cnode->is_root()) {
+                                break;
+                            }
+                        }
+                    }
+                    if (lookahead_skip) {
+                        last_encountered = a->identifier;
+                        muts_of_last_encountered = a->mutations.size();
+                        last_node = a;
+                        last_anc_state = anc_state;
+                        traversed += a->mutations.size();
+                        continue;
+                    }
                     //check whether this 0 node is 1 in any other region
                     //record each region where this is true
                     //(in the single region case, its never true, but its only like two operations to check anyways)
@@ -611,7 +632,7 @@ std::vector<std::string> find_introductions(MAT::Tree* T, std::map<std::string, 
                             if (num_to_report > 0) {
                                 count = num_to_report;
                             }
-                            for (auto i = 0; i < assign_search->second.size(); i++) {
+                            for (size_t i = 0; i < assign_search->second.size(); i++) {
                                 //vectors for confidence and region tags were generated in parallel and should remain aligned
                                 if (assign_search->second[i] == region) {
                                     //don't allow it to be its own point of origin, that's silly.
@@ -635,17 +656,6 @@ std::vector<std::string> find_introductions(MAT::Tree* T, std::map<std::string, 
                                 }
                                 oriscores.pop();
                             }
-                            // std::cerr << "DEBUG: Successfully identified origins\n";
-                            //for (auto r: assign_search->second) {
-                            // if (origins.size() == 0) {
-                            //     origins += r;
-                            // } else {
-                            //     origins += "," + r;
-                            // }
-                            //}
-                            //for (auto v: region_cons.find(a->identifier)->second) {
-                            //    origins_cons << v << ",";
-                            //}
                         } else {
                             origins = "indeterminate";
                             origins_cons << 0.0;
@@ -657,12 +667,14 @@ std::vector<std::string> find_introductions(MAT::Tree* T, std::map<std::string, 
                         origins_cons << 0.0;
                     }
                     //collect additional information if requested.
+                    size_t clid_count = a->clade_annotations.size();
+                    std::map<size_t,std::string> clade_indeces_recorded;
                     std::string intro_clades = "";
                     std::string intro_mut_path = "";
                     //get the mutations and clade information
                     //both of these require an rsearch back from the point of origin to the tree root
                     //mutation path is going to be in reverse for simplicity, so using < to indicate direction
-                    std::set<size_t> clade_indeces_recorded;
+                    // std::set<size_t> clade_indeces_recorded;
                     for (MAT::Node* as: T->rsearch(a->identifier, true)) {
                         //collect mutations
                         std::string mutstr;
@@ -679,19 +691,24 @@ std::vector<std::string> find_introductions(MAT::Tree* T, std::map<std::string, 
                             auto ann = as->clade_annotations[i];
                             if (ann.size() > 0) {
                                 if (clade_indeces_recorded.find(i) == clade_indeces_recorded.end()) {
-                                    clade_indeces_recorded.insert(i);
-                                    if (intro_clades.size() == 0) {
-                                        intro_clades += ann;
-                                    } else {
-                                        intro_clades += "," + ann;
-                                    }
+                                    clade_indeces_recorded[i] = ann;
                                 }
                             }
                         }
+                        if (clade_indeces_recorded.size() == clid_count) {
+                            break;
+                        }
                     }
-                    if (intro_clades.size() == 0) {
-                        intro_clades = "none";
+                    for (size_t i = 0; i < clid_count; i++) {
+                        intro_clades += "\t";
+                        auto kann = clade_indeces_recorded.find(i);
+                        if (kann == clade_indeces_recorded.end()) {
+                            intro_clades += "none";
+                        } else {
+                            intro_clades += kann->second;
+                        }
                     }
+
                     //calculate the trait phylogeny association metrics
                     //only if additional info is requested because of how it affects total runtime.
                     size_t mc = 0;
@@ -716,9 +733,18 @@ std::vector<std::string> find_introductions(MAT::Tree* T, std::map<std::string, 
                     std::stringstream ostr;
                     //mcl stores just cluster-specific information for a separate output file.
                     std::stringstream mcl;
+                    size_t mgap;
+                    if (muts_of_last_encountered <= minimum_gap) {
+                        //the gap in this case is the mutations of the current node, instead of the last one
+                        mgap = a->mutations.size();
+                    } else {
+                        mgap = muts_of_last_encountered;
+                        //remove those mutations from the traversal so that it's consistent with span
+                        traversed -= muts_of_last_encountered;
+                    }
                     if (region_assignments.size() == 1) {
-                        ostr << "\t" << last_anc_state << "\t" << anc_state << "\t" << traversed << "\t" << a->mutations.size() << "\t" << intro_clades << "\t" << intro_mut_path;
-                        mcl << last_anc_state << "\t" << anc_state << "\t" << a->mutations.size() << "\t" << intro_clades << "\t" << intro_mut_path;
+                        ostr << "\t" << last_anc_state << "\t" << anc_state << "\t" << traversed << "\t" << mgap << intro_clades << "\t" << intro_mut_path;
+                        mcl << last_anc_state << "\t" << anc_state << "\t" << mgap << intro_clades << "\t" << intro_mut_path;
                         if (eval_uncertainty) {
                             ostr << "\t" << assignments.find(s)->second;
                         }
@@ -729,8 +755,8 @@ std::vector<std::string> find_introductions(MAT::Tree* T, std::map<std::string, 
                             ostr << "\n";
                         }
                     } else {
-                        ostr << "\t" << last_anc_state << "\t" << anc_state << "\t" << traversed << "\t" << a->mutations.size() << "\t" << region << "\t" << origins << "\t" << origins_cons.str() << "\t" << intro_clades << "\t" << intro_mut_path;
-                        mcl << last_anc_state << "\t" << anc_state << "\t" << a->mutations.size() << "\t" << region << "\t" << origins << "\t" << origins_cons.str() << "\t" << intro_clades << "\t" << intro_mut_path;
+                        ostr << "\t" << last_anc_state << "\t" << anc_state << "\t" << traversed << "\t" << mgap << "\t" << region << "\t" << origins << "\t" << origins_cons.str() << intro_clades << "\t" << intro_mut_path;
+                        mcl << last_anc_state << "\t" << anc_state << "\t" << mgap << "\t" << region << "\t" << origins << "\t" << origins_cons.str() << intro_clades << "\t" << intro_mut_path;
                         if (eval_uncertainty) {
                             ostr << "\t" << assignments.find(s)->second;
                         }
@@ -741,13 +767,22 @@ std::vector<std::string> find_introductions(MAT::Tree* T, std::map<std::string, 
                             ostr << "\n";
                         }
                     }
-                    clusters[last_encountered][s] = ostr.str();
-                    //keying the meta for clusters on each sample is redundant and gross, but I can't think of a better way to pass information from
-                    clustermeta[last_encountered] = mcl.str();
+                    if (muts_of_last_encountered <= minimum_gap) {
+                        //key clusters on the identifier of the node in ancestry that's NOT in the region rather than the oldest one that IS.
+                        //but only if the last one encountered is too close to this parent
+                        //used to merge groups of identical samples into single clusters always and sometimes cause sibling clusters to become merged depending on parameters used.
+                        clusters[a->identifier][s] = ostr.str();
+                        //keying the meta for clusters on each sample is redundant and gross, but I can't think of a better way to pass information from
+                        clustermeta[a->identifier] = mcl.str();
+                    } else {
+                        clusters[last_encountered][s] = ostr.str();
+                        clustermeta[last_encountered] = mcl.str();
+                    }
                     total_processed++;
                     break;
                 } else {
                     last_encountered = a->identifier;
+                    muts_of_last_encountered = a->mutations.size();
                     last_node = a;
                     last_anc_state = anc_state;
                     traversed += a->mutations.size();
@@ -755,8 +790,8 @@ std::vector<std::string> find_introductions(MAT::Tree* T, std::map<std::string, 
             }
         }
         std::vector<float> growthv;
-        std::map<float,std::vector<std::string>> cgm;
-        std::map<std::string, std::string> date_tracker;
+        std::unordered_map<float,std::vector<std::string>> cgm;
+        std::unordered_map<std::string, std::string> date_tracker;
         for (auto cs: clusters) {
             std::string ldatestr;
             MAT::Node* nn = T->get_node(cs.first);
@@ -773,7 +808,6 @@ std::vector<std::string> find_introductions(MAT::Tree* T, std::map<std::string, 
                     continue;
                 }
                 ldatestr = boost::gregorian::to_simple_string(ldates.first) + "\t" + boost::gregorian::to_simple_string(ldates.second);
-                //diff = (ldates.second - ldates.first);
                 diff = (boost::gregorian::day_clock::universal_day() - ldates.first); //try weighting growth by current date to change top cluster display.
             }
             date_tracker[cs.first] = ldatestr;
@@ -822,7 +856,7 @@ std::vector<std::string> find_introductions(MAT::Tree* T, std::map<std::string, 
                     continue;
                 }
                 std::stringstream clo;
-                clo << cid << "\t" << clusters[cid].size() << "\t" << date_tracker[cid] << "\t" << gv << "\t" << span << "\t" << clustermeta[cid] << "\t";
+                clo << ra.first << '_' << cid << "\t" << clusters[cid].size() << "\t" << date_tracker[cid] << "\t" << gv << "\t" << span << "\t" << clustermeta[cid] << "\t";
                 rankr++;
                 bool first = true;
                 for (auto ss: clusters[cid]) {
@@ -836,7 +870,7 @@ std::vector<std::string> find_introductions(MAT::Tree* T, std::map<std::string, 
                     //in order, first seven columns are
                     //sample id, cluster id, cluster rank, cluster growth score, earliest date, latest date, cluster size
                     //then the rest are the by-sample information (path, distance of this specific sample, yadda yadda)
-                    cout << ss.first << "\t" << cid << "\t" << rankr << "\t" << gv << "\t" << date_tracker[cid] << "\t" << clusters[cid].size() << "\t" << span << ss.second;
+                    cout << ss.first << "\t" << ra.first << '_' << cid << "\t" << rankr << "\t" << gv << "\t" << date_tracker[cid] << "\t" << clusters[cid].size() << "\t" << span << ss.second;
                     outstrs.push_back(cout.str());
                 }
                 clo << "\n";
@@ -865,14 +899,21 @@ std::vector<std::string> find_introductions(MAT::Tree* T, std::map<std::string, 
     }
     if (bycluster != "") {
         std::ofstream cof(bycluster);
-        cof << "cluster_id\tsample_count\tearliest_date\tlatest_date\tgrowth_score\tspan\tintro_confidence\tparent_confidence\torigin_gap\t";
+        cof << "cluster_id\tsample_count\tearliest_date\tlatest_date\tgrowth_score\tspan\tintro_confidence\tparent_confidence\torigin_gap";
         if (add_info) {
-            cof << "monophyletic_cladesize\tassociation_index\t";
+            cof << "\tmonophyletic_cladesize\tassociation_index";
         }
         if (region_assignments.size() == 1) {
-            cof << "clade\tmutation_path\tsamples\n";
+            for (size_t i = 1; i <= nann; i++) {
+                cof << "\tannotation_" + std::to_string(i);
+            }
+            cof << "\tmutation_path\tsamples\n";
         } else {
-            cof << "region\tinferred_origin\tinferred_origin_confidence\tclade\tmutation_path\tsamples\n";
+            cof << "\tregion\tinferred_origin\tinferred_origin_confidence";
+            for (size_t i = 1; i <= nann; i++) {
+                cof << "\tannotation_" + std::to_string(i);
+            }
+            cof << "\tmutation_path\tsamples\n";
         }
         for (auto os: bycluster_output) {
             cof << os;
@@ -897,7 +938,9 @@ void introduce_main(po::parsed_options parsed) {
     bool leafconf = vm["evaluate-metadata"].as<bool>();
     std::string clusterout = vm["cluster-output"].as<std::string>();
     size_t num_to_report = vm["num-to-report"].as<size_t>();
+    size_t look_ahead = vm["num-to-look"].as<size_t>();
     float min_to_report = vm["minimum-to-report"].as<float>();
+    size_t min_gap = vm["minimum-gap"].as<size_t>();
     // Load input MAT and uncondense tree
     uint32_t num_threads = vm["threads"].as<uint32_t>();
     fprintf(stderr, "Initializing %u worker threads.\n\n", num_threads);
@@ -908,7 +951,7 @@ void introduce_main(po::parsed_options parsed) {
         T.uncondense_leaves();
     }
     auto region_map = read_two_column(samples_filename);
-    std::map<std::string,std::string> datemeta = {};
+    std::unordered_map<std::string,std::string> datemeta = {};
     if (metafile.size() > 0) {
         std::set<std::string> samples;
         for (auto kv: region_map) {
@@ -922,12 +965,13 @@ void introduce_main(po::parsed_options parsed) {
             exit(1);
         }
     }
-    auto outstrings = find_introductions(&T, region_map, add_info, clade_regions, moconf, clusterout, dump_assignments, leafconf, earliest_date, latest_date, datemeta, min_to_report, num_to_report);
-
-    std::ofstream of;
-    of.open(output_file);
-    for (std::string o: outstrings) {
-        of << o;
+    auto outstrings = find_introductions(&T, region_map, add_info, clade_regions, moconf, clusterout, dump_assignments, leafconf, earliest_date, latest_date, datemeta, min_to_report, num_to_report, look_ahead, min_gap);
+    if (output_file != "") {
+        std::ofstream of;
+        of.open(output_file);
+        for (std::string o: outstrings) {
+            of << o;
+        }
+        of.close();
     }
-    of.close();
 }

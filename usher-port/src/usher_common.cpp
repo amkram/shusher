@@ -3,25 +3,14 @@
 namespace po = boost::program_options;
 namespace MAT = Mutation_Annotated_Tree;
 
-/**
- * Preconditions:
- * - gone through arguments which are saved in the variables
- * - MAT is loaded
- * returns: exit code
- */
-
-
-int usher_common(std::string dout_filename, std::string outdir, uint32_t num_threads, uint32_t max_trees,
+//returns exit code
+int usher_common(std::string dout_filename, std::string outdir, uint32_t max_trees,
                  uint32_t max_uncertainty, uint32_t max_parsimony, bool sort_before_placement_1, bool sort_before_placement_2, bool sort_before_placement_3,
                  bool reverse_sort, bool collapse_tree, bool collapse_output_tree, bool print_uncondensed_tree, bool print_parsimony_scores,
                  bool retain_original_branch_len, bool no_add, bool detailed_clades, size_t print_subtrees_size, size_t print_subtrees_single,
                  std::vector<Missing_Sample>& missing_samples, std::vector<std::string>& low_confidence_samples, MAT::Tree* loaded_MAT) {
 
-    /*
 
-    COPIED FROM usher.cpp around 109~199 and mostly copied 200~207
-
-    */
     if (print_subtrees_size == 1) {
         std::cerr << "ERROR: print-subtrees-size should be larger than 1\n";
         return 1;
@@ -98,8 +87,8 @@ int usher_common(std::string dout_filename, std::string outdir, uint32_t num_thr
     // timer object to be used to measure runtimes of individual stages
     Timer timer;
 
-    fprintf(stderr, "Initializing %u worker threads.\n\n", num_threads);
-    tbb::task_scheduler_init init(num_threads);
+//    fprintf(stderr, "Initializing %u worker threads.\n\n", num_threads);
+//    tbb::task_scheduler_init init(num_threads);
 
 #if SAVE_PROFILE == 1
     Instrumentor::Get().BeginSession("test-main", "p1.json");
@@ -125,8 +114,6 @@ int usher_common(std::string dout_filename, std::string outdir, uint32_t num_thr
     std::vector<size_t> tree_parsimony_scores;
 
     auto num_trees = optimal_trees.size();
-
-    //COPIED FROM usher.cpp around 461~1409
 
     // Collapses the tree nodes not carrying a mutation and also condenses
     // identical sequences into a single node.
@@ -316,6 +303,9 @@ int usher_common(std::string dout_filename, std::string outdir, uint32_t num_thr
             fprintf(stderr, "Adding missing samples to the tree.\n");
         }
 
+        std::string placement_stats_filename = outdir + "/placement_stats.tsv";
+        FILE *placement_stats_file = fopen(placement_stats_filename.c_str(), "w");
+
         // Traverse in sorted sample order
         for (size_t idx=0; idx<indexes.size(); idx++) {
 
@@ -419,7 +409,7 @@ int usher_common(std::string dout_filename, std::string outdir, uint32_t num_thr
                         inp.best_j_vec = &best_j_vec;
                         inp.node_has_unique = &(node_has_unique);
 
-                        mapper2_body(inp, print_parsimony_scores, false);
+                        mapper2_body(inp, print_parsimony_scores, print_parsimony_scores);
                     }
                 }, ap);
 
@@ -460,6 +450,7 @@ int usher_common(std::string dout_filename, std::string outdir, uint32_t num_thr
 
                     fprintf(stderr, "Current tree size (#nodes): %zu\tSample name: %s\tParsimony score: %d\tNumber of parsimony-optimal placements: %zu\n", total_nodes, sample.c_str(), \
                             best_set_difference, num_best);
+                    fprintf(placement_stats_file, "%s\t%d\t%zu\t", sample.c_str(), best_set_difference, num_best);
                     // Prints a warning message if 2 or more
                     // parsimony-optimal placements found
                     if (num_best > 1) {
@@ -468,13 +459,15 @@ int usher_common(std::string dout_filename, std::string outdir, uint32_t num_thr
                         }
                         if (num_best > max_uncertainty) {
                             fprintf(stderr, "WARNING: Number of parsimony-optimal placements exceeds maximum allowed value (%u). Ignoring sample %s.\n", max_uncertainty, sample.c_str());
-                        } else if (best_set_difference > max_parsimony) {
-                            fprintf(stderr, "WARNING: Parsimony score of the most parsimonious placement exceeds the maximum allowed value (%u). Ignoring sample %s.\n", max_parsimony, sample.c_str());
-                        } else {
+                        }  else if (best_set_difference <= max_parsimony) {
                             fprintf(stderr, "WARNING: Multiple parsimony-optimal placements found. Placement done without high confidence.\n");
                         }
                     }
-                } else {
+
+                    if (best_set_difference > max_parsimony) {
+                        fprintf(stderr, "WARNING: Parsimony score of the most parsimonious placement exceeds the maximum allowed value (%u). Ignoring sample %s.\n", max_parsimony, sample.c_str());
+                    }
+                }  else {
                     fprintf(stderr, "Missing sample: %s\t Best parsimony score: %d\tNumber of parsimony-optimal placements: %zu\n", sample.c_str(), \
                             best_set_difference, num_best);
 
@@ -617,7 +610,7 @@ int usher_common(std::string dout_filename, std::string outdir, uint32_t num_thr
                                 bool include_self = !bfs[best_j_vec[k]]->is_leaf() && !node_has_unique[k];
                                 auto clade_assignment = T->get_clade_assignment(bfs[best_j_vec[k]], c, include_self);
                                 missing_samples[s].clade_assignments[c][k] = clade_assignment;
-                                if (k==0) {
+                                if (bfs[best_j_vec[k]]==best_node) {
                                     missing_samples[s].best_clade_assignment[c] = clade_assignment;
                                 }
                             }
@@ -769,19 +762,22 @@ int usher_common(std::string dout_filename, std::string outdir, uint32_t num_thr
                                     node->add_mutation(m);
                                 }
                             }
+                        }
 
-                            if (node_imputed_mutations[best_j].size() > 0) {
-                                fprintf (stderr, "Imputed mutations:\t");
-                                size_t tot = node_imputed_mutations[best_j].size();
-                                for (size_t curr = 0; curr < tot; curr++) {
-                                    if (curr < tot-1) {
-                                        fprintf (stderr, "%i:%c;", node_imputed_mutations[best_j][curr].position, MAT::get_nuc(node_imputed_mutations[best_j][curr].mut_nuc));
-                                    } else {
-                                        fprintf (stderr, "%i:%c", node_imputed_mutations[best_j][curr].position, MAT::get_nuc(node_imputed_mutations[best_j][curr].mut_nuc));
-                                    }
+                        if (node_imputed_mutations[best_j].size() > 0) {
+                            fprintf (stderr, "Imputed mutations:\t");
+                            size_t tot = node_imputed_mutations[best_j].size();
+                            for (size_t curr = 0; curr < tot; curr++) {
+                                MAT::Mutation& mut = node_imputed_mutations[best_j][curr];
+                                if (curr < tot-1) {
+                                    fprintf (stderr, "%i:%c;", mut.position, MAT::get_nuc(mut.mut_nuc));
+                                    fprintf (placement_stats_file, "%i:%c;", mut.position, MAT::get_nuc(mut.mut_nuc));
+                                } else {
+                                    fprintf (stderr, "%i:%c", mut.position, MAT::get_nuc(mut.mut_nuc));
+                                    fprintf (placement_stats_file, "%i:%c", mut.position, MAT::get_nuc(mut.mut_nuc));
                                 }
-                                fprintf(stderr, "\n");
                             }
+                            fprintf(stderr, "\n");
                         }
 
                         if (max_trees == 1) {
@@ -789,11 +785,12 @@ int usher_common(std::string dout_filename, std::string outdir, uint32_t num_thr
                         }
                     }
                 }
+                fputc('\n', placement_stats_file);
 
                 fprintf(stderr, "Completed in %ld msec \n\n", timer.Stop());
             }
         }
-
+        fclose(placement_stats_file);
     }
 
     num_trees = optimal_trees.size();
@@ -846,11 +843,6 @@ int usher_common(std::string dout_filename, std::string outdir, uint32_t num_thr
 
             auto parsimony_score = T->get_parsimony_score();
             fprintf(stderr, "The parsimony score for this tree is: %zu \n", parsimony_score);
-            //FILE* uncondensed_final_tree_file = fopen(uncondensed_final_tree_filename.c_str(), "w");
-
-            //fprintf(uncondensed_final_tree_file, "%s\n", MAT::get_newick_string(*T, true, true, retain_original_branch_len, true).c_str());
-
-            //fclose(uncondensed_final_tree_file);
             std::ofstream uncondensed_final_tree_file(uncondensed_final_tree_filename.c_str(), std::ofstream::out);
             std::stringstream newick_ss;
             write_newick_string(newick_ss, *T, T->root, true, true, retain_original_branch_len, true);
@@ -875,9 +867,7 @@ int usher_common(std::string dout_filename, std::string outdir, uint32_t num_thr
             }
             auto parsimony_score = T->get_parsimony_score();
             fprintf(stderr, "The parsimony score for this tree is: %zu \n", parsimony_score);
-            //FILE* final_tree_file = fopen(final_tree_filename.c_str(), "w");
-            //fprintf(final_tree_file, "%s\n", MAT::get_newick_string(*T, true, true, retain_original_branch_len).c_str());
-            //fclose(final_tree_file);
+
             std::ofstream final_tree_file(final_tree_filename.c_str(), std::ofstream::out);
             std::stringstream newick_ss;
             write_newick_string(newick_ss, *T, T->root, true, true, retain_original_branch_len);

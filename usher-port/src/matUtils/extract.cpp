@@ -28,7 +28,9 @@ po::variables_map parse_extract_command(po::parsed_options parsed) {
     ("max-parsimony,a", po::value<int>()->default_value(-1),
      "Select samples by whether they have less than the maximum indicated parsimony score (terminal branch length)")
     ("max-branch-length,b", po::value<int>()->default_value(-1),
-     "Remove samples which have branches of greater than the indicated length in their ancestry.")
+     "Select samples which don't have any branches with than the indicated length in their ancestry.")
+    ("max-path-length,P", po::value<int>()->default_value(-1),
+     "Select samples which have a total path length (number of mutations different from reference) less than or equal to P.")
     ("nearest-k,k", po::value<std::string>()->default_value(""),
      "Select a sample ID and the nearest k samples to it, formatted as sample:k. E.g. -k sample_1:50 gets sample 1 and the nearest 50 samples to it as a subtree.")
     ("nearest-k-batch,K", po::value<std::string>()->default_value(""),
@@ -36,9 +38,11 @@ po::variables_map parse_extract_command(po::parsed_options parsed) {
     ("set-size,z", po::value<size_t>()->default_value(0),
      "Automatically add or remove samples at random from the selected sample set until it is the indicated size.")
     ("limit-to-lca,Z", po::bool_switch(),
-     "Use to limit random samples chosen with -z to below the most recent common ancestor of all other samples.")
+     "Use to limit random samples chosen with -z or -w to below the most recent common ancestor of all other samples.")
     ("get-internal-descendents,I", po::value<std::string>()->default_value(""),
      "Select the set of samples descended from the indicated internal node.")
+    ("from-mrca,U", po::bool_switch(),
+     "Select all samples which are descended from the most recent common ancestor of the indicated set of samples. Applied before filling background with random samples.")
     ("get-representative,r", po::value<size_t>()->default_value(0),
      "Automatically select the indicated number of representative samples per clade in the tree after other selection steps and prune all other samples (minimum 2).")
     ("prune,p", po::bool_switch(),
@@ -69,10 +73,14 @@ po::variables_map parse_extract_command(po::parsed_options parsed) {
      "Use to write a newick tree to the indicated file.")
     ("write-taxodium,l", po::value<std::string>()->default_value(""),
      "Write protobuf in alternate format consumed by Taxodium.")
-    ("title,B", po::value<std::string>()->default_value(""),
-     "Title of MAT to display in Taxodium (used with --write-taxodium).")
+    ("x-scale,G", po::value<float>()->default_value(0.2),
+     "Specifies custom X-axis scaling value for Taxodium output. Not necessary for UShER SARS-CoV-2 trees.")
+    ("title,B", po::value<std::string>()->default_value("mutation_annotated_tree"),
+     "Title of MAT to display in Taxodium or Auspice (used with --write-taxodium or -j).")
     ("description,D", po::value<std::string>()->default_value(""),
      "Description of MAT to display in Taxodium (used with --write-taxodium).")
+    ("include-nt,J", po::bool_switch(),
+     "Include nucleotide mutations in addition to protein mutations (used with --write-taxodium)")
     ("extra-fields,F", po::value<std::string>()->default_value(""),
      "Comma-separated list of additional metadata column names beyond the defaults of: strain, genbank_accession, country, date, pangolin_lineage (used with --write-taxodium).")
     ("retain-branch-length,E", po::bool_switch(),
@@ -87,6 +95,18 @@ po::variables_map parse_extract_command(po::parsed_options parsed) {
      "Use to produce an usher-style minimum set of subtrees of the indicated size which include all of the selected samples. Produces .nh and .txt files.")
     ("usher-clades-txt", po::bool_switch(),
      "When producing usher-style subtree(s), also write an usher-style clades.txt file with clade annotations for selected samples, if the tree has clade annotations.")
+    ("add-random,W", po::value<size_t>()->default_value(0),
+     "Add exactly W samples at random to your selection. Affected by -Z and overridden by -z.")
+    ("select-nearest,Y", po::value<size_t>()->default_value(0),
+     "Set to add to the sample selection the y nearest samples to each of your samples, without duplicates.")
+    ("closest-relatives,V", po::value<std::string>()->default_value(""),
+     "Write a tsv file of the closest relative(s) (in mutations) of each selected sample to the indicated file. All equidistant closest samples are included unless --break-ties is set.")
+    ("break-ties,q", po::bool_switch(),
+     "Only output one closest relative per sample (used only with --closest-relatives). If multiple closest relatives are equidistant, the lexicographically smallest sample ID is chosen.")
+    ("dump-metadata,Q", po::value<std::string>()->default_value(""),
+     "Set to write all final stored metadata to a tsv.")
+    ("whitelist,L", po::value<std::string>()->default_value(""),
+     "Pass a list of samples, one per line, to always retain regardless of any other parameters.")
     ("threads,T", po::value<uint32_t>()->default_value(num_cores), num_threads_message.c_str())
     ("help,h", "Print help messages");
     // Collect all the unrecognized options from the first pass. This will include the
@@ -118,6 +138,7 @@ void extract_main (po::parsed_options parsed) {
     po::variables_map vm = parse_extract_command(parsed);
     std::string input_mat_filename = vm["input-mat"].as<std::string>();
     std::string input_samples_file = vm["samples"].as<std::string>();
+    std::string whitelist_samples_file = vm["whitelist"].as<std::string>();
     std::string nearest_k = vm["nearest-k"].as<std::string>();
     std::string nearest_k_batch_file = vm["nearest-k-batch"].as<std::string>();
     std::string clade_choice = vm["clade"].as<std::string>();
@@ -127,8 +148,10 @@ void extract_main (po::parsed_options parsed) {
     std::string reroot_node = vm["reroot"].as<std::string>();
     int max_parsimony = vm["max-parsimony"].as<int>();
     int max_branch = vm["max-branch-length"].as<int>();
+    int max_path = vm["max-path-length"].as<int>();
     size_t max_epps = vm["max-epps"].as<size_t>();
     bool prune_samples = vm["prune"].as<bool>();
+    bool mrca = vm["from-mrca"].as<bool>();
     size_t get_representative = vm["get-representative"].as<size_t>();
     bool resolve_polytomies = vm["resolve-polytomies"].as<bool>();
     bool retain_branch = vm["retain-branch-length"].as<bool>();
@@ -139,6 +162,11 @@ void extract_main (po::parsed_options parsed) {
     size_t setsize = vm["set-size"].as<size_t>();
     size_t minimum_subtrees_size = vm["minimum-subtrees-size"].as<size_t>();
     bool limit_lca = vm["limit-to-lca"].as<bool>();
+    size_t add_random = vm["add-random"].as<size_t>();
+    size_t select_nearest = vm["select-nearest"].as<size_t>();
+    float x_scale = vm["x-scale"].as<float>();
+    bool break_ties = vm["break-ties"].as<bool>();
+    bool include_nt = vm["include-nt"].as<bool>();
 
     boost::filesystem::path path(dir_prefix);
     if (!boost::filesystem::exists(path)) {
@@ -152,6 +180,7 @@ void extract_main (po::parsed_options parsed) {
     std::string sample_path_filename = dir_prefix + vm["sample-paths"].as<std::string>();
     std::string clade_path_filename = dir_prefix + vm["clade-paths"].as<std::string>();
     std::string all_path_filename = dir_prefix + vm["all-paths"].as<std::string>();
+    std::string closest_relatives_filename = dir_prefix + vm["closest-relatives"].as<std::string>();
     std::string tree_filename = dir_prefix + vm["write-tree"].as<std::string>();
     std::string vcf_filename = dir_prefix + vm["write-vcf"].as<std::string>();
     std::string output_mat_filename = dir_prefix + vm["write-mat"].as<std::string>();
@@ -163,10 +192,12 @@ void extract_main (po::parsed_options parsed) {
     std::string meta_filename = vm["metadata"].as<std::string>();
     std::string gtf_filename = dir_prefix + vm["input-gtf"].as<std::string>();
     std::string fasta_filename = dir_prefix + vm["input-fasta"].as<std::string>();
+    std::string dump_metadata = dir_prefix + vm["dump-metadata"].as<std::string>();
+
 
     std::vector<std::string> additional_meta_fields;
     MAT::string_split(raw_meta_fields, ',', additional_meta_fields);
-    
+
     bool collapse_tree = vm["collapse-tree"].as<bool>();
     bool no_genotypes = vm["no-genotypes"].as<bool>();
     uint32_t num_threads = vm["threads"].as<uint32_t>();
@@ -177,7 +208,7 @@ void extract_main (po::parsed_options parsed) {
     return f != dir_prefix;
 }) &&
 usher_single_subtree_size == 0 && usher_minimum_subtrees_size == 0) {
-        if (nearest_k_batch_file == "") {
+        if (nearest_k_batch_file == "" && closest_relatives_filename == dir_prefix) {
             fprintf(stderr, "ERROR: No output files requested!\n");
             exit(1);
         }
@@ -203,14 +234,10 @@ usher_single_subtree_size == 0 && usher_minimum_subtrees_size == 0) {
     //if any sample selection arguments are set.
     //each of the sample selection arguments is run sequentially
     //so that you can choose, for example, "from among this clade, take samples with EPPs = 1..."
-    //explicit setting goes first, then clade, then mutation, then epps- in order of increasing runtime for checking sample membership
-    //to maximize efficiency (no need to calculate epps for a sample you're going to throw out in the next statement)
+    //explicit setting goes first, then they are calculated in rough order of time to compute, with EPPs at the end, so that
+    //expensive computation isn't performed on samples that are going to be removed anyways.
     timer.Start();
     fprintf(stderr, "Checking for and applying sample selection arguments\n");
-    //TODO: sample select code could take a previous list of samples to check in some cases like what EPPs does
-    //which could save on runtime compared to getting instances across the whole tree and intersecting
-    //though the current setup would enable more complex things, like saying this OR this in arguments, it's less efficient
-    //and arguably efficiency should be prioritized over flexibility for features that are not implemented
     std::vector<std::string> samples;
     if (input_samples_file != "") {
         samples = read_sample_names(input_samples_file);
@@ -317,33 +344,28 @@ usher_single_subtree_size == 0 && usher_minimum_subtrees_size == 0) {
         }
     }
     if (match_choice != "") {
-        if (samples.size() == 0) {
-            samples = get_sample_match(&T, match_choice);
-        } else {
-            auto rsamples = get_sample_match(&T, match_choice);
-            samples = sample_intersect(samples, rsamples);
-        }
+        samples = get_sample_match(&T, samples, match_choice);
         if (samples.size() == 0) {
             fprintf(stderr, "ERROR: No samples fulfill selected criteria. Change arguments and try again\n");
             exit(1);
         }
     }
     if (max_parsimony >= 0) {
+        samples = get_parsimony_samples(&T, samples, max_parsimony);
         if (samples.size() == 0) {
-            samples = get_parsimony_samples(&T, max_parsimony);
-        } else {
-            auto psamples =  get_parsimony_samples(&T, max_parsimony);
-            samples = sample_intersect(samples, psamples);
-            //check to make sure we haven't emptied our sample set; if we have, throw an error
-            if (samples.size() == 0) {
-                fprintf(stderr, "ERROR: No samples fulfill selected criteria. Change arguments and try again\n");
-                exit(1);
-            }
+            fprintf(stderr, "ERROR: No samples fulfill selected criteria. Change arguments and try again\n");
+            exit(1);
         }
     }
     if (max_branch >= 0) {
-        //intersection is built into this one because its a significant runtime gain to not rsearch samples I won't use anyways
         samples = get_short_steppers(&T, samples, max_branch);
+        if (samples.size() == 0) {
+            fprintf(stderr, "ERROR: No samples fulfill selected criteria. Change arguments and try again\n");
+            exit(1);
+        }
+    }
+    if (max_path >= 0) {
+        samples = get_short_paths(&T, samples, max_path);
         if (samples.size() == 0) {
             fprintf(stderr, "ERROR: No samples fulfill selected criteria. Change arguments and try again\n");
             exit(1);
@@ -360,8 +382,36 @@ usher_single_subtree_size == 0 && usher_minimum_subtrees_size == 0) {
             exit(1);
         }
     }
-    if (setsize > 0) {
-        samples = fill_random_samples(&T, samples, setsize, limit_lca);
+    if (mrca) {
+        //get all descendents from the most recent common ancestor of the current samples.
+        //there's no reason to check if the set is empty because this set is always a minimum what's passed in (its additive only)
+        //perform this step before filling in background with random samples
+        samples = get_mrca_samples(&T, samples);
+    }
+    std::set<std::string> not_nearest;
+    if (select_nearest > 0) {
+        fprintf(stderr, "Selecting context samples...\n");
+        //store the reason they were included as a map to add to metadata later.
+        //in this case, just store the original list.
+        not_nearest.insert(samples.begin(), samples.end());
+        std::set<std::string> nsamples;
+        for (auto s: samples) {
+            auto nearest = get_nearby(&T, s, select_nearest);
+            nsamples.insert(nearest.begin(), nearest.end());
+        }
+        samples.assign(nsamples.begin(), nsamples.end());
+    }
+    std::set<std::string> not_random;
+    if ((setsize > 0) || (add_random > 0)) {
+        not_random.insert(samples.begin(), samples.end());
+        size_t tv;
+        if (setsize > 0) {
+            tv = setsize;
+        } else {
+            fprintf(stderr, "Adding background samples...\n");
+            tv = add_random + samples.size();
+        }
+        samples = fill_random_samples(&T, samples, tv, limit_lca);
     }
     //the final step of selection is to invert the set if prune is set
     //this is done by getting all sample names which are not in the samples vector.
@@ -381,6 +431,16 @@ usher_single_subtree_size == 0 && usher_minimum_subtrees_size == 0) {
         if (samples.size() == 0) {
             fprintf(stderr, "ERROR: No samples fulfill selected criteria (tree is left empty). Change arguments and try again\n");
             exit(1);
+        }
+    }
+    //make sure all whitelisted samples are included in the output after all other selection is performed.
+    if (whitelist_samples_file != "") {
+        fprintf(stderr, "Whitelisting samples...\n");
+        auto wsamples = read_sample_names(whitelist_samples_file);
+        for (auto w: wsamples) {
+            if (std::find(samples.begin(),samples.end(),w) == samples.end()) {
+                samples.push_back(w);
+            }
         }
     }
     //before performing any other action, reroot the tree if requested.
@@ -476,7 +536,7 @@ usher_single_subtree_size == 0 && usher_minimum_subtrees_size == 0) {
         //TODO: filter_master can support pruning directly rather than generating an inverse set and pruning all but,
         //but downstream stuff wants the inverse set of sample names to work with
         //so there's a better way to do this in at least some cases.
-        subtree = filter_master(T, samples, false);
+        subtree = filter_master(T, samples, false, true);
     }
     //if polytomy resolution was requested, apply it
     if (resolve_polytomies) {
@@ -537,7 +597,7 @@ usher_single_subtree_size == 0 && usher_minimum_subtrees_size == 0) {
         fprintf(stderr, "Completed in %ld msec\n\n", timer.Stop());
     }
 
-    std::vector<std::map<std::string,std::map<std::string,std::string>>> catmeta;
+    std::vector<std::unordered_map<std::string,std::unordered_map<std::string,std::string>>> catmeta;
     std::vector<std::string> metav;
     if (meta_filename != "") {
         std::stringstream mns(meta_filename);
@@ -558,7 +618,7 @@ usher_single_subtree_size == 0 && usher_minimum_subtrees_size == 0) {
     //if json output AND mutation context is requested, add an additional metadata column indicating whether each branch contains
     //the mutation of interest. the metadata map is not limited to leaf nodes.
     if ((json_filename != "") && (mutation_choice != "")) {
-        std::map<std::string,std::string> mutmap;
+        std::unordered_map<std::string,std::string> mutmap;
         std::vector<std::string> mutations;
         std::stringstream mns(mutation_choice);
         std::string m;
@@ -581,7 +641,7 @@ usher_single_subtree_size == 0 && usher_minimum_subtrees_size == 0) {
             }
             mutmap[n->identifier] = metastr;
         }
-        std::map<std::string,std::map<std::string,std::string>> submet;
+        std::unordered_map<std::string,std::unordered_map<std::string,std::string>> submet;
         submet["mutation_of_interest"]=mutmap;
         catmeta.push_back(submet);
     }
@@ -625,23 +685,81 @@ usher_single_subtree_size == 0 && usher_minimum_subtrees_size == 0) {
                 while ((pos = batch_samples[s].find("/")) != std::string::npos) {
                     batch_samples[s].replace(pos, 1, "_");
                 }
-                write_json_from_mat(&subt, batch_samples[s] + "_context.json", &catmeta);
+                write_json_from_mat(&subt, batch_samples[s] + "_context.json", &catmeta, tax_title);
             }
         }, ap) ;
         fprintf(stderr, "%ld batch sample jsons written in %ld msec.\n\n", batch_samples.size(), timer.Stop());
     }
+    if (closest_relatives_filename != dir_prefix) {
+        fprintf(stderr, "Per-sample closest relative(s) requested. Computing...\n");
+        if (break_ties) {
+            fprintf(stderr, "Storing one closest relative per sample.\n");
+        }
+        std::ofstream out(closest_relatives_filename);
+
+        timer.Start();
+        std::vector<std::string> closest_relatives;
+
+        for (std::string sample : samples) {
+            std::pair<std::vector<std::string>, size_t> closest_relatives_pair = get_closest_samples(&T, sample);
+            std::vector<std::string> closest_relatives = closest_relatives_pair.first;
+            size_t dist = closest_relatives_pair.second;
+            if (closest_relatives.size() > 0) {
+                closest_relatives = closest_relatives_pair.first;
+                std::string s = "";
+                s += sample + '\t';
+                std::string lex_smallest_sample = closest_relatives[0];
+                for (std::string relative : closest_relatives) {
+                    if (break_ties) {
+                        if (relative < lex_smallest_sample) {
+                            lex_smallest_sample = relative;
+                        }
+                    } else {
+                        s += relative + ',';
+                    }
+                }
+                if (break_ties) {
+                    s += lex_smallest_sample;
+                } else {
+                    s = s.substr(0, s.size() - 1);
+                }
+                s += '\t' + std::to_string(dist);
+                out << s << "\n";
+            }
+        }
+        fprintf(stderr, "TSV of closest relative written to %s in %ld msec.\n\n", closest_relatives_filename.c_str(), timer.Stop());
+    }
     //if json output AND sample context is requested, add an additional metadata column which simply indicates the focal sample versus context
     if ((json_filename != "") && (nearest_k != "")) {
-        std::map<std::string,std::string> conmap;
+        std::unordered_map<std::string,std::string> conmap;
         for (auto s: samples) {
             if (s == sample_id) {
                 conmap[s] = "focal";
             }
         }
-        std::map<std::string,std::map<std::string,std::string>> submet;
+        std::unordered_map<std::string,std::unordered_map<std::string,std::string>> submet;
         submet["focal_view"] = conmap;
         catmeta.emplace_back(submet);
     }
+    //same for random samples and nearest samples.
+    if ((json_filename != "") && ((not_random.size() > 0) || (not_nearest.size() > 0))) {
+        std::unordered_map<std::string,std::string> ranmap;
+        for (auto s: samples) {
+            //samples that are random will not appear in either set
+            //samples that are nearest will appear in not_random but not not_nearest
+            if ((not_random.size() > 0) && (not_random.find(s) == not_random.end())) {
+                ranmap[s] = "random";
+            } else if ((not_nearest.size() > 0) && (not_nearest.find(s) == not_nearest.end())) {
+                ranmap[s] = "nearest";
+            } else {
+                ranmap[s] = "primary";
+            }
+        }
+        std::unordered_map<std::string,std::unordered_map<std::string,std::string>> submet;
+        submet["selected_for"] = ranmap;
+        catmeta.emplace_back(submet);
+    }
+
     //last step is to convert the subtree to other file formats
     if (vcf_filename != dir_prefix) {
         fprintf(stderr, "Generating VCF of final tree\n");
@@ -649,7 +767,7 @@ usher_single_subtree_size == 0 && usher_minimum_subtrees_size == 0) {
     }
     if (json_filename != dir_prefix) {
         fprintf(stderr, "Generating JSON of final tree\n");
-        write_json_from_mat(&subtree, json_filename, &catmeta);
+        write_json_from_mat(&subtree, json_filename, &catmeta, tax_title);
     }
     if (tree_filename != dir_prefix) {
         fprintf(stderr, "Generating Newick file of final tree\n");
@@ -694,7 +812,39 @@ usher_single_subtree_size == 0 && usher_minimum_subtrees_size == 0) {
         if (!resolve_polytomies) {
             subtree.condense_leaves();
         }
-        save_taxodium_tree(subtree, output_tax_filename, metav, gtf_filename, fasta_filename, tax_title, tax_description, additional_meta_fields);
+        save_taxodium_tree(subtree, output_tax_filename, metav, gtf_filename, fasta_filename, tax_title, tax_description, additional_meta_fields, x_scale, include_nt);
+        fprintf(stderr, "Completed in %ld msec \n\n", timer.Stop());
+    }
+    if (dump_metadata != dir_prefix) {
+        timer.Start();
+        fprintf(stderr, "Dumping final metadata.\n");
+        std::ofstream mout (dump_metadata);
+        mout << "strain";
+        //first, all column names (except for sample, which is always first).
+        //ordered map so iteration is consistent with column names.
+        std::map<std::string,size_t> column_order;
+        std::vector<std::string> row_order;
+        size_t i = 0;
+        for (auto& omap: catmeta) {
+            for (auto& cv: omap) {
+                column_order[cv.first] = i;
+                mout << "\t" << cv.first;
+            }
+            i++;
+        }
+        for (auto s: samples) {
+            mout << "\n" << s;
+            for (auto cv: column_order) {
+                auto sv = catmeta[cv.second][cv.first].find(s);
+                if (sv != catmeta[cv.second][cv.first].end()) {
+                    mout << "\t" << sv->second;
+                } else {
+                    mout << "\tmissing";
+                }
+            }
+        }
+        mout << "\n";
+        mout.close();
         fprintf(stderr, "Completed in %ld msec \n\n", timer.Stop());
     }
 }

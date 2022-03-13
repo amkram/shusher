@@ -12,7 +12,8 @@
 #include <unistd.h>
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
-
+#include "usher_graph.hpp"
+#include <signal.h>
 // Uses one-hot encoding if base is unambiguous
 // A:1,C:2,G:4,T:8
 int8_t Mutation_Annotated_Tree::get_nuc_id (char nuc) {
@@ -354,6 +355,30 @@ std::string Mutation_Annotated_Tree::get_newick_string (const Tree& T, bool prin
     return get_newick_string(T, T.root, print_internal, print_branch_len, retain_original_branch_len, uncondense_leaves);
 }
 
+Mutation_Annotated_Tree::Mutation* Mutation_Annotated_Tree::mutation_from_string(const std::string& mut_string) {
+    // Parse string like /[A-Z][0-9]+[A-Z]/ e.g. A23403G; create & return (pointer to) Mutation_Annotated_Tree::Mutation
+    // with par_nuc set to ref_nuc (same as VCF parsing code in usher.cpp).
+    // If mut_string is not in expected format, print error message and return NULL.
+    char ref, alt;
+    int position;
+    int ret = sscanf(mut_string.c_str(), "%c%d%c", &ref, &position, &alt);
+    if (ret != 3 || ref < 'A' || ref > 'Z' || alt < 'A' || alt > 'Z') {
+        fprintf(stderr, "mutation_from_string: expected /[A-Z][0-9]+[A-Z/, got '%s'\n", mut_string.c_str());
+        return NULL;
+    }
+    Mutation_Annotated_Tree::Mutation* mut = new Mutation_Annotated_Tree::Mutation();
+    mut->ref_nuc = Mutation_Annotated_Tree::get_nuc_id(ref);
+    mut->position = position;
+    mut->mut_nuc = Mutation_Annotated_Tree::get_nuc_id(alt);
+    mut->par_nuc = mut->ref_nuc;
+    // Double-check to make sure there aren't additional characters past /[A-Z][0-9]+[A-Z]/:
+    if (mut->get_string() != mut_string) {
+        fprintf(stderr, "mutation_from_string: unexpected characters at the end of '%s'\n", mut_string.c_str());
+        mut = NULL;
+    }
+    return mut;
+}
+
 // Split string into words for a specific delimiter delim
 void Mutation_Annotated_Tree::string_split (std::string const& s, char delim, std::vector<std::string>& words) {
     TIMEIT();
@@ -518,7 +543,7 @@ Mutation_Annotated_Tree::Tree Mutation_Annotated_Tree::load_mutation_annotated_t
     }
     google::protobuf::io::IstreamInputStream stream(&instream);
     google::protobuf::io::CodedInputStream input(&stream);
-    input.SetTotalBytesLimit(BIG_SIZE, BIG_SIZE);
+    //input.SetTotalBytesLimit(BIG_SIZE, BIG_SIZE);
     data.ParseFromCodedStream(&input);
     //check if the pb has a metadata field
     bool hasmeta = (data.metadata_size()>0);
@@ -943,16 +968,16 @@ void Mutation_Annotated_Tree::Tree::remove_node_helper (std::string nid, bool mo
 
                 std::vector<Mutation> tmp;
                 for (auto m: child->mutations) {
-                    tmp.emplace_back(m.copy());
+                    tmp.emplace_back(m);
                 }
 
                 //Clear and add back mutations in chrono order
                 child->clear_mutations();
                 for (auto m: curr_parent->mutations) {
-                    child->add_mutation(m.copy());
+                    child->add_mutation(m);
                 }
                 for (auto m: tmp) {
-                    child->add_mutation(m.copy());
+                    child->add_mutation(m);
                 }
 
                 curr_parent->parent->children.push_back(child);
@@ -999,6 +1024,62 @@ void Mutation_Annotated_Tree::Tree::remove_node_helper (std::string nid, bool mo
 void Mutation_Annotated_Tree::Tree::remove_node (std::string nid, bool move_level) {
     TIMEIT();
     remove_node_helper (nid, move_level);
+}
+
+void Mutation_Annotated_Tree::Tree::remove_single_child_nodes() {
+    auto bfs = breadth_first_expansion();
+    for (auto n: bfs) {
+        if ((n == root) || (n->children.size() != 1)) {
+            continue;
+        }
+
+        auto curr_parent = n;
+        auto child = n->children[0];
+        if (curr_parent->parent != NULL) {
+            child->parent = curr_parent->parent;
+            child->level = curr_parent->parent->level + 1;
+            child->branch_length += curr_parent->branch_length;
+
+            std::vector<Mutation> tmp;
+            for (auto m: child->mutations) {
+                tmp.emplace_back(m);
+            }
+
+            //Clear and add back mutations in chrono order
+            child->clear_mutations();
+            for (auto m: curr_parent->mutations) {
+                child->add_mutation(m);
+            }
+            for (auto m: tmp) {
+                child->add_mutation(m);
+            }
+
+            curr_parent->parent->children.push_back(child);
+
+            auto iter = std::find(curr_parent->parent->children.begin(), curr_parent->parent->children.end(), curr_parent);
+            assert(iter != curr_parent->parent->children.end());
+            curr_parent->parent->children.erase(iter);
+
+            // Update levels of source descendants
+            std::queue<Node*> remaining_nodes;
+            remaining_nodes.push(child);
+            while (remaining_nodes.size() > 0) {
+                Node* curr_node = remaining_nodes.front();
+                remaining_nodes.pop();
+                curr_node->level = curr_node->parent->level + 1;
+                for (auto c: curr_node->children) {
+                    remaining_nodes.push(c);
+                }
+            }
+
+            auto par_it = all_nodes.find(curr_parent->identifier);
+            assert (par_it != all_nodes.end());
+            all_nodes.erase(par_it);
+            auto to_delete = curr_parent;
+            curr_parent = curr_parent->parent;
+            delete to_delete;
+        }
+    }
 }
 
 void Mutation_Annotated_Tree::Tree::move_node (std::string source_id, std::string dest_id, bool move_level) {
@@ -1060,10 +1141,12 @@ std::vector<Mutation_Annotated_Tree::Node*> Mutation_Annotated_Tree::Tree::bread
 }
 
 void Mutation_Annotated_Tree::Tree::depth_first_expansion_helper(Mutation_Annotated_Tree::Node* node, std::vector<Mutation_Annotated_Tree::Node*>& vec) const {
+    node->dfs_idx=vec.size();
     vec.push_back(node);
     for (auto c: node->children) {
         depth_first_expansion_helper(c, vec);
     }
+    node->dfs_end_idx=vec.size();
 }
 
 std::vector<Mutation_Annotated_Tree::Node*> Mutation_Annotated_Tree::Tree::depth_first_expansion(Mutation_Annotated_Tree::Node* node) const {
@@ -1239,6 +1322,43 @@ void Mutation_Annotated_Tree::Tree::rotate_for_display(bool reverse) {
                 return num_desc[n1] > num_desc[n2];
             });
         }
+    }
+}
+
+void Mutation_Annotated_Tree::Tree::rotate_for_consistency() {
+    auto dfs = depth_first_expansion();
+
+    std::unordered_map<Node*, int> num_desc;
+    std::unordered_map<Node*, std::string> smallest_desc;
+
+    for (int i=int(dfs.size())-1; i>=0; i--) {
+        auto n = dfs[i];
+        int desc = 1;
+        for (auto child: n->children) {
+            desc += num_desc[child];
+        }
+        num_desc[n] = desc;
+
+        if (n->is_leaf()) {
+            smallest_desc[n] = n->identifier;
+        } else {
+            std::string smallest = smallest_desc[n->children[0]];
+            for (auto child: n->children) {
+                if (smallest_desc[child] < smallest) {
+                    smallest = smallest_desc[child];
+                }
+            }
+            smallest_desc[n] = smallest;
+        }
+    }
+
+    for (auto n: dfs) {
+        tbb::parallel_sort(n->children.begin(), n->children.end(),
+        [&](Node* n1, Node* n2) {
+            return ((smallest_desc[n1] < smallest_desc[n2]) ||
+                    ((smallest_desc[n1] == smallest_desc[n2]) &&
+                     (num_desc[n1] < num_desc[n2])));
+        });
     }
 }
 
@@ -1781,4 +1901,229 @@ void Mutation_Annotated_Tree::get_sample_mutation_paths (Mutation_Annotated_Tree
         fprintf(mutation_paths_file, "\n");
     }
     fclose(mutation_paths_file);
+}
+
+void Mutation_Annotated_Tree::read_vcf(Mutation_Annotated_Tree::Tree* T, std::string &vcf_filename, std::vector<Missing_Sample>& missing_samples, bool create_new_mat) {
+    if (create_new_mat) {
+        // If called with a tree file that needs to create a MAT
+
+        // Vector used to store all tree nodes in breadth-first search (BFS) order
+        std::vector<Node*> bfs;
+        // Map the node identifier string to index in the BFS traversal
+        std::unordered_map<std::string, size_t> bfs_idx;
+
+        // Variables below used to store the different fields of the input VCF file
+        bool header_found = false;
+        std::vector<std::string> variant_ids;
+
+        // timer object to be used to measure runtimes of individual stages
+        Timer timer;
+
+        // Breadth-first expansion to populate bfs and bfs_idx
+        bfs = T->breadth_first_expansion();
+        for (size_t idx = 0; idx < bfs.size(); idx++) {
+            bfs_idx[bfs[idx]->identifier] = idx;
+        }
+
+        fprintf(stderr, "Loading VCF file.\n");
+        timer.Start();
+
+        // Boost library used to stream the contents of the input VCF file in
+        // uncompressed or compressed .gz format
+        std::ifstream infile(vcf_filename, std::ios_base::in | std::ios_base::binary);
+        if (!infile) {
+            fprintf(stderr, "ERROR: Could not open the VCF file: %s!\n", vcf_filename.c_str());
+            exit(1);
+        }
+        boost::iostreams::filtering_istream instream;
+        try {
+            if (vcf_filename.find(".gz\0") != std::string::npos) {
+                instream.push(boost::iostreams::gzip_decompressor());
+            }
+            instream.push(infile);
+        } catch(const boost::iostreams::gzip_error& e) {
+            std::cout << e.what() << '\n';
+        }
+
+        fprintf(stderr, "Completed in %ld msec \n\n", timer.Stop());
+
+        fprintf(stderr, "Computing parsimonious assignments for input variants.\n");
+        timer.Start();
+
+        // A TBB flow graph containing a single source_node (reader) connected
+        // to several mappers. The source_node sequentially reads in the different
+        // lines of the input VCF file and constructs a mapper task for each
+        // VCF line. Each mapper task takes a mapper_input as input, which stores
+        // the alternate alleles, ambiguous bases and missing data (Ns) for
+        // different tree samples at the corresponding VCF line/position. The
+        // mappers use Fitch-Sankoff algorithm to assign mutations at different
+        // branches of the tree and update the mutation-annotated tree (T)
+        // accordingly.
+        tbb::flow::graph mapper_graph;
+
+        tbb::flow::function_node<mapper_input, int> mapper(mapper_graph, tbb::flow::unlimited, mapper_body());
+        tbb::flow::source_node <mapper_input> reader (mapper_graph,
+        [&] (mapper_input &inp) -> bool {
+
+            //check if reached end-of-file
+            int curr_char = instream.peek();
+            if(curr_char == EOF)
+                return false;
+
+            std::string s;
+            std::getline(instream, s);
+            std::vector<std::string> words;
+            string_split(s, words);
+            inp.variant_pos = -1;
+
+            // Header is found when "POS" is the second word in the line
+            if ((not header_found) && (words.size() > 1)) {
+                if (words[1] == "POS") {
+                    // Sample names start from the 10th word in the header
+                    for (size_t j=9; j < words.size(); j++) {
+                        variant_ids.emplace_back(words[j]);
+                        // If sample name not in tree, add it to missing_samples
+                        if (bfs_idx.find(words[j]) == bfs_idx.end()) {
+                            missing_samples.emplace_back(Missing_Sample(words[j]));
+                        }
+                    }
+                    header_found = true;
+                }
+            } else if (header_found) {
+                if (words.size() != 9+variant_ids.size()) {
+                    fprintf(stderr, "ERROR! Incorrect VCF format.\n");
+                    exit(1);
+                }
+                std::vector<std::string> alleles;
+                alleles.clear();
+                inp.variant_pos = std::stoi(words[1]);
+                string_split(words[4], ',', alleles);
+                // T will be modified by the mapper with mutation
+                // annotations
+                inp.T = T;
+                inp.chrom = words[0];
+                inp.bfs = &bfs;
+                inp.bfs_idx = &bfs_idx;
+                inp.variant_ids = &variant_ids;
+                inp.missing_samples = &missing_samples;
+                // Ref nuc id uses one-hot encoding (A:0b1, C:0b10, G:0b100,
+                // T:0b1000)
+                inp.ref_nuc = get_nuc_id(words[3][0]);
+                assert((inp.ref_nuc & (inp.ref_nuc-1)) == 0); //check if it is power of 2
+                inp.variants.clear();
+                for (size_t j=9; j < words.size(); j++) {
+                    if (isdigit(words[j][0])) {
+                        int allele_id = std::stoi(words[j]);
+                        if (allele_id > 0) {
+                            std::string allele = alleles[allele_id-1];
+                            inp.variants.emplace_back(std::make_tuple(j-9, get_nuc_id(allele[0])));
+                        }
+                    } else {
+                        inp.variants.emplace_back(std::make_tuple(j-9, get_nuc_id('N')));
+                    }
+                }
+            }
+            return true;
+        }, true );
+        tbb::flow::make_edge(reader, mapper);
+        mapper_graph.wait_for_all();
+    } else {
+        // Read vcf with existing mat
+
+        fprintf(stderr, "Loading VCF file\n");
+        // Boost library used to stream the contents of the input VCF file in
+        // uncompressed or compressed .gz format
+        std::ifstream infile(vcf_filename, std::ios_base::in | std::ios_base::binary);
+        if (!infile) {
+            fprintf(stderr, "ERROR: Could not open the VCF file: %s!\n", vcf_filename.c_str());
+            exit(1);
+        }
+        boost::iostreams::filtering_istream instream;
+        try {
+            if (vcf_filename.find(".gz\0") != std::string::npos) {
+                instream.push(boost::iostreams::gzip_decompressor());
+            }
+            instream.push(infile);
+        } catch(const boost::iostreams::gzip_error& e) {
+            std::cout << e.what() << '\n';
+        }
+
+        bool header_found = false;
+        std::vector<std::string> variant_ids;
+        std::vector<size_t> missing_idx;
+        std::string s;
+        // This while loop reads the VCF file line by line and populates
+        // missing_samples and missing_sample_mutations based on the names and
+        // variants of missing samples. If a sample name in the VCF is already
+        // found in the tree, it gets ignored with a warning message
+        while (instream.peek() != EOF) {
+            std::getline(instream, s);
+            std::vector<std::string> words;
+            string_split(s, words);
+            if ((not header_found) && (words.size() > 1)) {
+                if (words[1] == "POS") {
+                    for (size_t j=9; j < words.size(); j++) {
+                        variant_ids.emplace_back(words[j]);
+                        if ((T->get_node(words[j]) == NULL) && (T->condensed_leaves.find(words[j]) == T->condensed_leaves.end())) {
+                            missing_samples.emplace_back(Missing_Sample(words[j]));
+                            missing_idx.emplace_back(j);
+                        } else {
+                            fprintf(stderr, "WARNING: Ignoring sample %s as it is already in the tree.\n", words[j].c_str());
+                        }
+                    }
+                    header_found = true;
+                }
+            } else if (header_found) {
+                if (words.size() != 9+variant_ids.size()) {
+                    fprintf(stderr, "ERROR! Incorrect VCF format. Expected %zu columns but got %zu.\n", 9+variant_ids.size(), words.size());
+                    exit(1);
+                }
+                std::vector<std::string> alleles;
+                alleles.clear();
+                string_split(words[4], ',', alleles);
+                for (size_t k = 0; k < missing_idx.size(); k++) {
+                    size_t j = missing_idx[k];
+                    auto iter = missing_samples.begin();
+                    std::advance(iter, k);
+                    if (iter != missing_samples.end()) {
+                        Mutation m;
+                        m.chrom = words[0];
+                        m.position = std::stoi(words[1]);
+                        m.ref_nuc = get_nuc_id(words[3][0]);
+                        assert((m.ref_nuc & (m.ref_nuc-1)) == 0); //check if it is power of 2
+                        m.par_nuc = m.ref_nuc;
+                        // Alleles such as '.' should be treated as missing
+                        // data. if the word is numeric, it is an index to one
+                        // of the alleles
+                        if (isdigit(words[j][0])) {
+                            int allele_id = std::stoi(words[j]);
+                            if (allele_id > 0) {
+                                std::string allele = alleles[allele_id-1];
+                                if (allele[0] == 'N') {
+                                    m.is_missing = true;
+                                    m.mut_nuc = get_nuc_id('N');
+                                } else {
+                                    auto nuc = get_nuc_id(allele[0]);
+                                    if (nuc == get_nuc_id('N')) {
+                                        m.is_missing = true;
+                                    } else {
+                                        m.is_missing = false;
+                                    }
+                                    m.mut_nuc = nuc;
+                                }
+                                (*iter).mutations.emplace_back(m);
+                            }
+                        } else {
+                            m.is_missing = true;
+                            m.mut_nuc = get_nuc_id('N');
+                            (*iter).mutations.emplace_back(m);
+                        }
+                        if ((m.mut_nuc & (m.mut_nuc-1)) !=0) {
+                            (*iter).num_ambiguous++;
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

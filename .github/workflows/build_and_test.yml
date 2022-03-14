@@ -41,8 +41,8 @@ jobs:
       working-directory: usher
       run: |
         sudo install/installUbuntu.sh
-        wget https://hgwdev.gi.ucsc.edu/~angie/UShER_SARS-CoV-2/public-latest.all.masked.pb.gz
-        build/usher -k50 -i public-latest.all.masked.pb.gz -T1 -d . -v ../usher-port/test/preload/test_samples.vcf
+        wget https://hgwdev.gi.ucsc.edu/~angie/UShER_SARS-CoV-2/2021/01/20/public-2021-01-20.all.masked.pb.gz
+        build/usher -k50 -i public-2021-01-20.all.masked.pb.gz -d . -v ../usher-port/test/preload/test_samples.vcf
         
     - name: Compile and run UShER (WebAssembly)
       working-directory: usher-port
@@ -50,7 +50,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install wget python3 build-essential cmake protobuf-compiler dh-autoreconf
         ./installUbuntuWeb.sh test
-        node --experimental-wasm-threads build/usher.js -k50 -i ../usher/public-latest.all.masked.pb.gz -T1 -d . -v test/preload/test_samples.vcf
+        node --experimental-wasm-threads build/usher.js -k50 -i ../usher/public-2021-01-20.all.masked.pb.gz -T1 -d . -v test/preload/test_samples.vcf
         echo "DIFF_PASSED=1" >> $GITHUB_ENV
         cmp ../usher/final-tree.nh ./final-tree.nh || echo "DIFF_PASSED=0" >> $GITHUB_ENV
         cmp ../usher/mutation-paths.txt ./mutation-paths.txt || echo "DIFF_PASSED=0" >> $GITHUB_ENV

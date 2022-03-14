@@ -1,7 +1,7 @@
 {
   "name": "usher-web-app",
   "config": {
-    "usherBundle": "latest"
+    "usherBundle": "/home/alex/shusher/usher-port/build"
   },
   "version": "0.5.0",
   "author": "Alexander Kramer",

@@ -4,7 +4,7 @@ project(shusher)
 
 configure_file(src/version.hpp.in version.hpp)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -g -Wno-unused-function")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wno-unused-function")
 set(CMAKE_INCLUDE_CURRENT_DIR ON) 
 
 if(DEFINED Protobuf_PATH) 
@@ -16,13 +16,12 @@ endif()
 if(Protobuf_FOUND)
     message(STATUS "Using Protocol Buffers ${Protobuf_VERSION}")
 endif()
-
 if(DEFINED TEST_MODE) # don't preload files, allows testing with node
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -s INITIAL_MEMORY=2147418112 -s NODERAWFS=1 -s ALLOW_MEMORY_GROWTH=1 -s EXIT_RUNTIME=1 -s DISABLE_EXCEPTION_CATCHING=1 -pthread")
     set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -O3 -pthread")
 else() # compile for web app
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 --pre-js ${Pre_JS} -pthread -s PROXY_TO_PTHREAD=1 -s INITIAL_MEMORY=2147418112 -s ALLOW_MEMORY_GROWTH=1 -s EXIT_RUNTIME=1 -s DISABLE_EXCEPTION_CATCHING=1  --preload-file preload/${Pre_Reference} --preload-file preload/test_samples.vcf")
-    set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -pthread -O3")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 --pre-js ${Pre_JS} -pthread -s PROXY_TO_PTHREAD=1 -s MAXIMUM_MEMORY=4294967296 -s ASSERTIONS=1 -s INITIAL_MEMORY=2147418112 -s ALLOW_MEMORY_GROWTH=1 -s EXIT_RUNTIME=1 -s DISABLE_EXCEPTION_CATCHING=1  --preload-file preload/${Pre_Reference} --preload-file preload/test_samples.vcf")
+    set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -pthread -O3 ")
 endif()
 
 set(Boost_USE_STATIC_LIBS ON)
@@ -47,4 +46,4 @@ add_executable(usher
     ${PROTO_HDRS}
     )
 
-target_link_libraries(usher PRIVATE stdc++ ${Boost_LIB_IO} ${Boost_LIB_FS} ${Boost_LIB_ZLIB} ${Boost_LIB_PO} ${Protobuf_LIBRARIES} ${TBB_LIB_TBB} ${TBB_LIB_TBBMALLOC} ${TBB_LIB_TBBMALLOC_PROXY} )
+target_link_libraries(usher PRIVATE stdc++ ${Boost_LIB_IO} ${Boost_LIB_FS} ${Boost_LIB_ZLIB} ${Boost_LIB_PO} ${Protobuf_LIBRARIES} ${TBB_LIB_TBB} ${TBB_LIB_TBBMALLOC} )

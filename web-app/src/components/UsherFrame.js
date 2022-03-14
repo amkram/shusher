@@ -22,6 +22,7 @@ import ConfirmationDialog from "./ConfirmationDialog";
 import ErrorSnackbar from "./ErrorSnackbar";
 import Button from "@material-ui/core/Button";
 import InfoSection from './InfoSection';
+import Troubleshooting from "./Troubleshooting";
 
 /**
  * This component contains most of web app logic for running UShER.
@@ -81,6 +82,15 @@ const useStyles = makeStyles((theme) => ({
     textAlign: "right",
     paddingLeft: "30px",
   },
+  troubleCard: {
+    marginTop: "50px",
+    display: "block",
+    margin: "0 auto",
+    minWidth: "80%",
+    textAlign: "left",
+    paddingLeft: "30px",
+  },
+
   usherCardInner: {
     display: "flex",
     justifyContent: "center",
@@ -529,7 +539,10 @@ export default function UsherFrame(props) {
           </Card>
         </div>
       </Collapse>
-
+      <Card className={classes.troubleCard}>
+        <Troubleshooting />
+      </Card>
+      
       <InfoSection />
     </div>
   );

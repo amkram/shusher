@@ -40,9 +40,9 @@ path_boost_zlib=$(readlink -f stage/lib/libboost_zlib.a)
 cd ..
 
 # TBB (ported)
-wget https://github.com/amkram/oneTBB-2019-wasm/archive/refs/tags/v1.0.tar.gz
-tar xzf v1.0.tar.gz
-cd oneTBB-2019-wasm-1.0
+wget https://github.com/amkram/oneTBB-2019-wasm/archive/refs/tags/v1.1.tar.gz
+tar xzf v1.1.tar.gz
+cd oneTBB-2019-wasm-1.1
 tbb_includes=$(readlink -f include)
 emmake make -j8
 path_tbb=$(readlink -f build/linux_wasm32_gcc_emscripten_wasm32_release/libtbb.so.2)

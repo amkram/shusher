@@ -81,7 +81,7 @@ int usher_common(std::string dout_filename, std::string outdir, uint32_t max_tre
         fprintf(stderr, "Creating output directory.\n\n");
         boost::filesystem::create_directory(path);
     }
-    path = boost::filesystem::canonical(outdir);
+    
     outdir = path.generic_string();
 
     // timer object to be used to measure runtimes of individual stages

@@ -48,7 +48,7 @@ jobs:
 
       - name: Update README with UShER version
         run: |
-          export REPLACE="<a target=\"_blank\" href=\"https:\/\/github.com\/yatisht\/usher\/tree\/${{ steps.getversion.outputs.usher_version }}\"><img src=\"https:\/\/img.shields.io\/badge\/UShER%20Version-commit%20$( head -c 8 usher_version.txt )-%235e0000\"\/><\/a><a href=\"https:\/\/joss.theoj.org\/papers\/03edfaa561a1cfbc53be7d98c8461cf3\"><img src=\"https:\/\/joss.theoj.org\/papers\/03edfaa561a1cfbc53be7d98c8461cf3\/status.svg\"><\/a>"
+          export REPLACE="<a target=\"_blank\" href=\"https:\/\/github.com\/yatisht\/usher\/tree\/${{ steps.getversion.outputs.usher_version }}\"><img src=\"https:\/\/img.shields.io\/badge\/UShER%20Version-commit%20$( head -c 8 usher_version.txt )-%235e0000\"\/><\/a> <a href=\"https:\/\/joss.theoj.org\/papers\/03edfaa561a1cfbc53be7d98c8461cf3\"><img src=\"https:\/\/joss.theoj.org\/papers\/03edfaa561a1cfbc53be7d98c8461cf3\/status.svg\"><\/a>"
           sed -n '/BEGIN_USHER_BADGE/{p;:a;N;/END_USHER_BADGE/!ba;s/.*\n/'"$REPLACE"'\n/};p' README.md > tmp
           cat tmp > README.md
         if: ${{ steps.getversion.outputs.is_new_version == 'TRUE' }}

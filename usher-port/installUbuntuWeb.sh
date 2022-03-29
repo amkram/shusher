@@ -17,7 +17,7 @@ cd ..
 
 # Boost + zlib
 wget https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.gz
-wget https://zlib.net/zlib-1.2.11.tar.gz
+wget https://zlib.net/fossils/zlib-1.2.11.tar.gz
 tar xzf boost_1_76_0.tar.gz
 tar xzf zlib-1.2.11.tar.gz
 zlib_path=$(readlink -f zlib-1.2.11)

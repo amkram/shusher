@@ -10,7 +10,7 @@
   
   [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
   [![Integration Tests](https://github.com/amkram/shusher/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/amkram/shusher/actions/workflows/build_and_test.yml)<!---BEGIN_USHER_BADGE-->
-<a target="_blank" href="https://github.com/yatisht/usher/tree/cb3ec4286a8bd5aaa60d9723440126e7d29773b0"><img src="https://img.shields.io/badge/UShER%20Version-commit%20cb3ec428-%235e0000"/></a> <a href="https://joss.theoj.org/papers/03edfaa561a1cfbc53be7d98c8461cf3"><img src="https://joss.theoj.org/papers/03edfaa561a1cfbc53be7d98c8461cf3/status.svg"></a>
+<a target="_blank" href="https://github.com/yatisht/usher/tree/483e7ad3387b5483aabc7944f39286a0864302b9"><img src="https://img.shields.io/badge/UShER%20Version-commit%20483e7ad3-%235e0000"/></a> <a href="https://joss.theoj.org/papers/03edfaa561a1cfbc53be7d98c8461cf3"><img src="https://joss.theoj.org/papers/03edfaa561a1cfbc53be7d98c8461cf3/status.svg"></a>
 <!---END_USHER_BADGE-->
  
   | :computer_mouse:	Access ShUShER <a target="_blank" href="https://shusher.gi.ucsc.edu">here</a>! |

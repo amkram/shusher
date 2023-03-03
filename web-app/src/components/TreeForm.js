@@ -20,7 +20,7 @@ export default function TreeForm(props) {
     <div>
       <FormControl className={classes.formControl}>
         <Select value={1}>
-          <MenuItem value={1}>Latest SARS-CoV-2</MenuItem>
+          <MenuItem value={1}>Global SARS-CoV-2</MenuItem>
         </Select>
       </FormControl>
     </div>

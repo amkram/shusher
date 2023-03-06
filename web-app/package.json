@@ -1,7 +1,7 @@
 {
   "name": "usher-web-app",
   "config": {
-    "usherBundle": "v0.5.0"
+    "usherBundle": "tmp_usher_port"
   },
   "version": "0.5.0",
   "author": "Alexander Kramer",

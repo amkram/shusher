@@ -1,7 +1,7 @@
 {
   "name": "usher-web-app",
   "config": {
-    "usherBundle": "latest"
+    "usherBundle": "v0.5.0"
   },
   "version": "0.5.0",
   "author": "Alexander Kramer",

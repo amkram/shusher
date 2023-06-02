@@ -22,7 +22,9 @@ jobs:
             wget https://github.com/amkram/shusher/archive/refs/tags/latest.tar.gz
             tar xvzf latest.tar.gz
             cd shusher-latest/web-app
-            npm install && npm run build
+            npm install
+            npm audit fix --force
+            npm run build
             cd /data
             pkill screen
             rm -rf shusher-latest

@@ -16,6 +16,10 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             cd /data
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+            source ~/.bashrc
+            nvm install 13.14
+            nvm use 13.14
             rm -rf temp/*
             mkdir -p temp
             cd temp

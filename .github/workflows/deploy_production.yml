@@ -27,7 +27,6 @@ jobs:
             tar xvzf latest.tar.gz
             cd shusher-latest/web-app
             npm install
-            npm audit fix --force
             npm run build
             cd /data
             pkill screen

@@ -1,6 +1,7 @@
 import React from "react";
 import Box from "@material-ui/core/Box";
 import UsherFrame from "../components/UsherFrame";
+import BrowserWarning from "../components/BrowserWarning";
 import { withStyles } from "@material-ui/core/styles";
 import { latestTreeUrl } from "../data/constants";
 import { showTreeFromJson } from "../tools/auspice/showTree";
@@ -60,6 +61,7 @@ class App extends React.Component {
       usherLoaded: false,
       treeVisible: false,
       latestTreeDownloaded: false,
+      treeDownloadProgress: null,
       jsReady: false,
     };
   }
@@ -121,9 +123,25 @@ class App extends React.Component {
 
 		// Download the latest global tree
         window
-          .saveFileFromUrl("/latest_tree.pb.gz", latestTreeUrl, mimeType)
+          .saveFileFromUrl(
+            "/latest_tree.pb.gz",
+            latestTreeUrl,
+            mimeType,
+            (loaded, total) => {
+              // total is 0 when the server doesn't report a length;
+              // leave progress null so the bar stays indeterminate.
+              if (total > 0) {
+                this.setState({
+                  treeDownloadProgress: (loaded / total) * 100,
+                });
+              }
+            }
+          )
           .then(() => {
-            this.setState({ latestTreeDownloaded: true });
+            this.setState({
+              latestTreeDownloaded: true,
+              treeDownloadProgress: 100,
+            });
           });
       };
 
@@ -168,6 +186,7 @@ class App extends React.Component {
     const { classes } = this.props;
     return (
       <div className={classes.root}>
+        <BrowserWarning />
         <div>
           <div className={classes.logo}>
             <img
@@ -183,6 +202,7 @@ class App extends React.Component {
             <UsherFrame
               returned={this.state.returned}
               latestTreeDownloaded={this.state.latestTreeDownloaded}
+              treeDownloadProgress={this.state.treeDownloadProgress}
               jsReady={this.state.jsReady}
             />
           </Box>

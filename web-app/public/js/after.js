@@ -2,7 +2,7 @@
  * It binds some functions to the global 'window' so we can access them from React components.
  */
 
-window.saveFileFromUrl = function (path, url, mimeType) {
+window.saveFileFromUrl = function (path, url, mimeType, onProgress) {
   var req = new XMLHttpRequest();
   return new Promise((resolve, reject) => {
     req.onreadystatechange = function () {
@@ -13,6 +13,12 @@ window.saveFileFromUrl = function (path, url, mimeType) {
         resolve();
       }
     };
+    // Report real download progress when the server sends Content-Length.
+    if (typeof onProgress === "function") {
+      req.onprogress = function (event) {
+        onProgress(event.loaded, event.lengthComputable ? event.total : 0);
+      };
+    }
     req.open("GET", url, true);
     req.responseType = "arraybuffer";
     req.send();

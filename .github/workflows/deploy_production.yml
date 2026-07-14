@@ -8,30 +8,52 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: SSH into shusher.gi.ucsc.edu and update running shusher
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOSTNAME }}
           username: ${{ secrets.SSH_USERNAME }}
           password: ${{ secrets.SSH_PASSWORD }}
           port: ${{ secrets.SSH_PORT }}
+          script_stop: true
           script: |
-            cd /data
+            set -euo pipefail
+
+            # Load nvm and pin the Node version auspice 2.23 needs.
+            export NVM_DIR="$HOME/.nvm"
             curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-            source ~/.bashrc
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
             nvm install 13.14
             nvm use 13.14
-            rm -rf temp/*
+
+            # Build the new release in a temp dir FIRST. If anything below
+            # fails, script_stop aborts before we touch the running app.
+            cd /data
+            rm -rf temp
             mkdir -p temp
             cd temp
-            wget https://github.com/amkram/shusher/archive/refs/tags/latest.tar.gz
-            tar xvzf latest.tar.gz
+            wget -q https://github.com/amkram/shusher/archive/refs/tags/latest.tar.gz
+            tar xzf latest.tar.gz
             cd shusher-latest/web-app
             npm install
             npm run build
+
+            # Build succeeded -> swap in the new release and restart.
+            # Target only our named session, not every screen the user owns.
+            screen -S shusher -X quit || true
             cd /data
-            pkill screen
             rm -rf shusher-latest
             mv temp/shusher-latest shusher-latest
-            cd shusher-latest/web-app 
-            screen -dmS shusher
-            screen -S shusher -X stuff 'npm run start\n'
+
+            # Start inside a shell that has sourced nvm, so npm/node are on
+            # PATH. `stuff`-ing into a blank screen loses the nvm environment.
+            screen -dmS shusher bash -c '
+              export NVM_DIR="$HOME/.nvm"
+              . "$NVM_DIR/nvm.sh"
+              nvm use 13.14
+              cd /data/shusher-latest/web-app
+              npm run start'
+
+            # Fail the job loudly if the app did not come up.
+            sleep 15
+            screen -ls | grep -q '\.shusher' || { echo "shusher screen session not running"; exit 1; }
+            echo "Deploy complete; shusher session is up."

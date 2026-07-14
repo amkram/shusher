@@ -8,7 +8,7 @@ export default function Troubleshooting(props) {
           <Box>
              <h5 style={{textDecoration: "underline", textAlign: "center"}}> NOTICE </h5>
                 <ul>
-                    <li>The ShUShER global SARS-Cov-2 tree is currently fixed to the 10/31/2022 tree containing 6,427,951 genomes. Newer trees have exceeded the capabilities of the Javascript port. Please download the command-line UShER tool to analyze larger trees.</li>
+                    <li>The ShUShER global SARS-Cov-2 tree is currently fixed to the 11/01/2022 tree containing over 6.4 million genomes. Newer trees have exceeded the capabilities of the Javascript port. Please download the command-line UShER tool to analyze larger trees.</li>
                 </ul>
               <h5 style={{textDecoration: "underline", textAlign: "center"}}> Troubleshooting</h5>
                 <ul>

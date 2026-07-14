@@ -9,6 +9,7 @@ import SubtreeForm from "./SubtreeForm";
 import FileUploadButton from "./FileUploadButton";
 import RunButton from "./RunButton";
 import UsherProgress from "./UsherProgress";
+import TreeDownloadProgress from "./TreeDownloadProgress";
 import { getFileType } from "../tools/files/fileHandling";
 import { fastaToVcf } from "../tools/alignment/fastaToVcf";
 import { referenceGenomeUrl } from "../data/constants";
@@ -388,6 +389,10 @@ export default function UsherFrame(props) {
   return (
     <div className={classes.root}>
       <h3 className={classes.heading}>Load your data</h3>
+
+      {!props.latestTreeDownloaded && (
+        <TreeDownloadProgress progress={props.treeDownloadProgress} />
+      )}
 
       <ConfirmationDialog
         onClose={handleDialogClose}

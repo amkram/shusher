@@ -9,7 +9,7 @@
  <br />
   
   [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
-  [![Integration Tests](https://github.com/amkram/shusher/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/amkram/shusher/actions/workflows/build_and_test.yml)<!---BEGIN_USHER_BADGE-->
+ <!---BEGIN_USHER_BADGE-->
 <a target="_blank" href="https://github.com/yatisht/usher/tree/e0df3f551710187535dc58613528ac761503a23d"><img src="https://img.shields.io/badge/UShER%20Version-commit%20e0df3f55-%235e0000"/></a> <a href="https://joss.theoj.org/papers/03edfaa561a1cfbc53be7d98c8461cf3"><img src="https://joss.theoj.org/papers/03edfaa561a1cfbc53be7d98c8461cf3/status.svg"></a>
 <!---END_USHER_BADGE-->
  
